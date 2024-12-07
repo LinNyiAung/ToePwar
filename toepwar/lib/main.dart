@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:toepwar/screens/login_screen.dart';
+import 'views/auth/login_view.dart';
 
 void main() {
   runApp(FinancialApp());
@@ -13,7 +13,7 @@ class FinancialApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Financial Management App',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: LoginScreen(),
+      home: LoginView(),
     );
   }
 }
