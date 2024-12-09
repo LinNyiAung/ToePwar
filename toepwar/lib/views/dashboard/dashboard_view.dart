@@ -137,6 +137,12 @@ class _DashboardViewState extends State<DashboardView> {
               dashboard.totalExpense,
               Colors.red,
             ),
+            SizedBox(height: 8),
+            _buildSummaryItem(
+              'Balance',
+              dashboard.balance,
+              dashboard.balance >= 0 ? Colors.blue : Colors.orange,
+            ),
 
           ],
         ),

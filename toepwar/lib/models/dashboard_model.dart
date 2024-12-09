@@ -3,18 +3,17 @@ import 'package:toepwar/models/transaction_model.dart';
 class Dashboard {
   final double totalIncome;
   final double totalExpense;
-
+  final double balance;
   final List<Transaction> recentTransactions;
 
   Dashboard({
     required this.totalIncome,
     required this.totalExpense,
-
+    required this.balance,
     required this.recentTransactions,
   });
 
   factory Dashboard.fromJson(Map<String, dynamic> json) {
-    // Helper function to safely parse numeric values
     double parseDouble(dynamic value) {
       if (value == null) return 0.0;
       if (value is num) return value.toDouble();
@@ -27,8 +26,7 @@ class Dashboard {
       }
       return 0.0;
     }
-    print("Dashboard data from JSON: $json");
-    // Handle null or empty transactions list
+
     List<Transaction> transactions = [];
     if (json['recent_transactions'] != null) {
       try {
@@ -36,7 +34,6 @@ class Dashboard {
             .map((transaction) => Transaction.fromJson(transaction))
             .toList();
       } catch (e) {
-        // If there's an error parsing transactions, return empty list
         print('Error parsing transactions: $e');
       }
     }
@@ -44,7 +41,7 @@ class Dashboard {
     return Dashboard(
       totalIncome: parseDouble(json['income']),
       totalExpense: parseDouble(json['expense']),
-
+      balance: parseDouble(json['balance']),
       recentTransactions: transactions,
     );
   }
@@ -53,7 +50,7 @@ class Dashboard {
     return {
       'income': totalIncome,
       'expense': totalExpense,
-
+      'balance': balance,
       'recent_transactions': recentTransactions
           .map((transaction) => transaction.toJson())
           .toList(),

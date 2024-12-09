@@ -179,8 +179,16 @@ def get_dashboard(user_id: str = Depends(get_current_user)):
         {"$match": {"user_id": user_id, "type": "expense"}},
         {"$group": {"_id": None, "total_expense": {"$sum": "$amount"}}}
     ])
-    return {"income": next(income, {}).get("total_income", 0), 
-            "expense": next(expense, {}).get("total_expense", 0)}
+    
+    total_income = next(income, {}).get("total_income", 0)
+    total_expense = next(expense, {}).get("total_expense", 0)
+    balance = total_income - total_expense
+    
+    return {
+        "income": total_income,
+        "expense": total_expense,
+        "balance": balance
+    }
 
 # Set Saving Goal
 @app.post("/goal")
