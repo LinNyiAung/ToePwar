@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'http://192.168.21.186:800';
+  static const String baseUrl = 'http://192.168.1.9:800';
 
   // Add other API-related constants here
   static const Map<String, List<String>> transactionCategories = {

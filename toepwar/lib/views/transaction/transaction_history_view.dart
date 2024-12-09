@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toepwar/views/transaction/transaction_filter.dart';
 
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
@@ -22,6 +23,7 @@ class TransactionHistoryView extends StatefulWidget {
 class _TransactionHistoryViewState extends State<TransactionHistoryView> {
   late final TransactionController _transactionController;
   bool _isLoading = false;
+  TransactionFilter? _currentFilter;
 
   @override
   void initState() {
@@ -69,6 +71,18 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
         title: Text('Transaction History'),
         actions: [
           IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: () async {
+              final filter = await showDialog<TransactionFilter>(
+                context: context,
+                builder: (context) => TransactionFilterDialog(
+                  initialFilter: _currentFilter,
+                ),
+              );
+              setState(() => _currentFilter = filter);
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () => setState(() {}),
           ),
@@ -95,10 +109,18 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             );
           }
 
+          final filteredTransactions = transactions
+              .where((t) => _currentFilter?.apply(t) ?? true)
+              .toList();
+
+          if (filteredTransactions.isEmpty) {
+            return Center(child: Text('No transactions match the filter'));
+          }
+
           return ListView.builder(
-            itemCount: transactions.length,
+              itemCount: filteredTransactions.length,
             itemBuilder: (context, index) {
-              final transaction = transactions[index];
+              final transaction = filteredTransactions[index];
               return TransactionListItem(
                 transaction: transaction,
                 onDelete: () => _deleteTransaction(transaction.id),
