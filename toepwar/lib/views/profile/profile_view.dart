@@ -1,9 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class ProfileView extends StatelessWidget {
+import '../../utils/api_constants.dart';
+import '../dashboard/widgets/drawer_widget.dart';
+
+class ProfileView extends StatefulWidget {
   final String token;
 
   ProfileView({required this.token});
+
+  @override
+  _ProfileViewState createState() => _ProfileViewState();
+}
+
+class _ProfileViewState extends State<ProfileView> {
+  late String username;
+  late String email;
+  bool isLoading = true;
+  String errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.baseUrl}/profile'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        username = data['username'];
+        email = data['email'];
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        errorMessage = 'Failed to load profile data';
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,9 +55,17 @@ class ProfileView extends StatelessWidget {
       appBar: AppBar(
         title: Text('Profile'),
       ),
+      drawer: DrawerWidget(  // Use the DrawerWidget here
+        token: widget.token, onTransactionChanged: () {  },
+
+      ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
-        child: Column(
+        child: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : errorMessage.isNotEmpty
+            ? Center(child: Text(errorMessage))
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Card(
@@ -26,12 +78,8 @@ class ProfileView extends StatelessWidget {
                       child: Icon(Icons.person, size: 50),
                     ),
                     SizedBox(height: 16),
-                    Text(
-                      'John Doe',
-                    ),
-                    Text(
-                      'john.doe@example.com',
-                    ),
+                    Text(username),
+                    Text(email),
                   ],
                 ),
               ),

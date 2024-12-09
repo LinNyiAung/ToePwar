@@ -54,6 +54,23 @@ def login(user: UserLogin):
     token = create_access_token({"sub": str(db_user["_id"])})
     return {"access_token": token, "token_type": "bearer"}
 
+
+@app.get("/profile")
+def get_profile(user_id: str = Depends(get_current_user)):
+    # Fetch the user's data from the database using the user_id
+    user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+    
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Return the user data, excluding sensitive information like password
+    return {
+        "id": str(user_data["_id"]),
+        "username": user_data["username"],
+        "email": user_data["email"]
+    }
+
+
 # Add Transaction
 @app.post("/addtransactions")
 def add_transaction(transaction: Transaction, user_id: str = Depends(get_current_user)):
