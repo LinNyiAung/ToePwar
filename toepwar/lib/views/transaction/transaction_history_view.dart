@@ -3,6 +3,7 @@ import 'package:toepwar/views/transaction/transaction_filter.dart';
 
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
+import '../dashboard/widgets/drawer_widget.dart';
 import '../dashboard/widgets/transaction_list_item.dart';
 import 'add_transaction_view.dart';
 import 'edit_transaction_view.dart';
@@ -87,6 +88,10 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             onPressed: () => setState(() {}),
           ),
         ],
+      ),
+      drawer: DrawerWidget(  // Use the DrawerWidget here
+        token: widget.token,
+        onTransactionChanged: widget.onTransactionChanged,
       ),
       body: FutureBuilder<List<Transaction>>(
         future: _transactionController.getTransactions(),

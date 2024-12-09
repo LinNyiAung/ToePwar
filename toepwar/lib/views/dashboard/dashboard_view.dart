@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toepwar/views/dashboard/widgets/drawer_widget.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/dashboard_model.dart';
@@ -48,6 +49,10 @@ class _DashboardViewState extends State<DashboardView> {
             onPressed: _refreshDashboard,
           ),
         ],
+      ),
+      drawer: DrawerWidget(  // Use the DrawerWidget here
+        token: widget.token,
+        onTransactionChanged: _refreshDashboard,
       ),
       body: RefreshIndicator(
         onRefresh: _refreshDashboard,
