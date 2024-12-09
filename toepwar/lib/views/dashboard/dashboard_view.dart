@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../controllers/dashboard_controller.dart';
+import '../../controllers/transaction_controller.dart';
 import '../../models/dashboard_model.dart';
 import '../../models/transaction_model.dart';
 import '../transaction/add_transaction_view.dart';
+import '../transaction/edit_transaction_view.dart';
 import '../transaction/transaction_history_view.dart';
 import 'widgets/transaction_list_item.dart';
 
@@ -208,7 +210,29 @@ class _DashboardViewState extends State<DashboardView> {
             itemCount: transactions.length,
             separatorBuilder: (context, index) => Divider(height: 1),
             itemBuilder: (context, index) {
-              return TransactionListItem(transaction: transactions[index]);
+              final transaction = transactions[index];
+              return TransactionListItem(
+                transaction: transaction,
+                onEdit: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditTransactionView(
+                        token: widget.token,
+                        transaction: transaction,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    _refreshDashboard();
+                  }
+                },
+                onDelete: () async {
+                  final controller = TransactionController(token: widget.token);
+                  await controller.deleteTransaction(transaction.id);
+                  _refreshDashboard();
+                },
+              );
             },
           ),
         ],

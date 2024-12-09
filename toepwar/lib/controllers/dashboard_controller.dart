@@ -30,7 +30,7 @@ class DashboardController {
   Future<List<Transaction>> getRecentTransactions() async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/transactions'),
+        Uri.parse('${ApiConstants.baseUrl}/gettransactions'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

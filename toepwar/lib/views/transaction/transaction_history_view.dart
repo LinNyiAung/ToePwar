@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
 import '../dashboard/widgets/transaction_list_item.dart';
 import 'add_transaction_view.dart';
+import 'edit_transaction_view.dart';
 
 class TransactionHistoryView extends StatefulWidget {
   final String token;
@@ -35,6 +37,22 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
       );
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _editTransaction(Transaction transaction) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditTransactionView(
+          token: widget.token,
+          transaction: transaction,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      setState(() {}); // Refresh the list
     }
   }
 
@@ -75,22 +93,10 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final transaction = transactions[index];
-              return Dismissible(
-                key: Key(transaction.id),
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: EdgeInsets.only(right: 16),
-                  child: Icon(
-                    Icons.delete,
-                    color: Colors.white,
-                  ),
-                ),
-                direction: DismissDirection.endToStart,
-                onDismissed: (direction) {
-                  _deleteTransaction(transaction.id);
-                },
-                child: TransactionListItem(transaction: transaction),
+              return TransactionListItem(
+                transaction: transaction,
+                onDelete: () => _deleteTransaction(transaction.id),
+                onEdit: () => _editTransaction(transaction),
               );
             },
           );

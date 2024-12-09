@@ -7,6 +7,7 @@ from auth import hash_password, verify_password, create_access_token, SECRET_KEY
 from schemas import UserSignUp, UserLogin, Token
 from models import Transaction, Goal
 from bson import ObjectId
+from bson.errors import InvalidId
 
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -54,22 +55,117 @@ def login(user: UserLogin):
     return {"access_token": token, "token_type": "bearer"}
 
 # Add Transaction
-@app.post("/transaction")
+@app.post("/addtransactions")
 def add_transaction(transaction: Transaction, user_id: str = Depends(get_current_user)):
-    print("Received transaction:", transaction.dict())  # Debugging log
-
+    print("Received transaction:", transaction.dict())
     transaction_data = transaction.dict()
-    transaction_data["user_id"] = user_id  # Add user_id to the transaction
-    transactions_collection.insert_one(transaction_data)
-    return {"message": "Transaction added"}
+    transaction_data["user_id"] = user_id
+    result = transactions_collection.insert_one(transaction_data)
+    
+    # Return the created transaction
+    created_transaction = transactions_collection.find_one({"_id": result.inserted_id})
+    return serialize_transaction(created_transaction)
+
+
+@app.put("/edittransactions/{transaction_id}")
+def update_transaction(
+    transaction_id: str,
+    transaction: Transaction,
+    user_id: str = Depends(get_current_user)
+):
+    print(f"Received PUT request for transaction ID: {transaction_id}")
+    print(f"Transaction data: {transaction.dict()}")
+    print(f"User ID: {user_id}")
+    
+    try:
+        # Convert string ID to ObjectId
+        transaction_object_id = ObjectId(transaction_id)
+        
+        # Verify the transaction exists and belongs to the user
+        existing_transaction = transactions_collection.find_one({
+            "_id": transaction_object_id,
+            "user_id": user_id
+        })
+        
+        if not existing_transaction:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Transaction {transaction_id} not found for user {user_id}"
+            )
+        
+        # Update the transaction
+        update_data = transaction.dict()
+        update_data["user_id"] = user_id
+        
+        result = transactions_collection.update_one(
+            {"_id": transaction_object_id, "user_id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(
+                status_code=400, 
+                detail="Transaction update failed - no modifications made"
+            )
+        
+        # Return the updated transaction
+        updated_transaction = transactions_collection.find_one({"_id": transaction_object_id})
+        return serialize_transaction(updated_transaction)
+        
+    except InvalidId:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid transaction ID format: {transaction_id}"
+        )
+    except Exception as e:
+        print(f"Error updating transaction: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to update transaction: {str(e)}"
+        )
 
 
 # Get Transaction History
-@app.get("/transactions")
+@app.get("/gettransactions")
 def get_transaction_history(user_id: str = Depends(get_current_user)):
     transactions = transactions_collection.find({"user_id": user_id}).sort("date", -1)  # Sort by date, latest first
     serialized_transactions = [serialize_transaction(txn) for txn in transactions]  # Serialize each transaction
     return serialized_transactions
+
+
+@app.delete("/deletetransactions/{transaction_id}")
+def delete_transaction(transaction_id: str, user_id: str = Depends(get_current_user)):
+    print(f"Received DELETE request for transaction ID: {transaction_id}")
+    print(f"User ID: {user_id}")
+    
+    try:
+        # Convert string ID to ObjectId
+        transaction_object_id = ObjectId(transaction_id)
+        
+        result = transactions_collection.delete_one({
+            "_id": transaction_object_id,
+            "user_id": user_id
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Transaction {transaction_id} not found for user {user_id}"
+            )
+        
+        return {"message": "Transaction deleted successfully"}
+        
+    except InvalidId:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid transaction ID format: {transaction_id}"
+        )
+    except Exception as e:
+        print(f"Error deleting transaction: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to delete transaction: {str(e)}"
+        )
 
 
 # Get Dashboard Summary
