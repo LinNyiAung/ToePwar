@@ -4,8 +4,9 @@ import '../../utils/api_constants.dart';
 
 class AddTransactionView extends StatefulWidget {
   final String token;
+  final VoidCallback onTransactionChanged;
 
-  AddTransactionView({required this.token});
+  AddTransactionView({required this.token, required this.onTransactionChanged,});
 
   @override
   _AddTransactionViewState createState() => _AddTransactionViewState();
@@ -42,7 +43,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         amount: double.parse(_amountController.text),
         category: _selectedCategory!,
       );
-
+      widget.onTransactionChanged();
       Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

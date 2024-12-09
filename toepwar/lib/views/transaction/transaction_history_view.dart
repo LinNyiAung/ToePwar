@@ -8,8 +8,12 @@ import 'edit_transaction_view.dart';
 
 class TransactionHistoryView extends StatefulWidget {
   final String token;
+  final VoidCallback onTransactionChanged;
 
-  TransactionHistoryView({required this.token});
+  TransactionHistoryView({
+    required this.token,
+    required this.onTransactionChanged,  // Add this line
+  });
 
   @override
   _TransactionHistoryViewState createState() => _TransactionHistoryViewState();
@@ -30,6 +34,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
 
     try {
       await _transactionController.deleteTransaction(transactionId);
+      widget.onTransactionChanged();
       setState(() {}); // Refresh the list
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,6 +52,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
         builder: (context) => EditTransactionView(
           token: widget.token,
           transaction: transaction,
+          onTransactionChanged: widget.onTransactionChanged,
         ),
       ),
     );
@@ -107,7 +113,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddTransactionView(token: widget.token),
+              builder: (context) => AddTransactionView(token: widget.token, onTransactionChanged: widget.onTransactionChanged,),
             ),
           );
           if (result == true) {

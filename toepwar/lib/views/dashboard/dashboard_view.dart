@@ -90,7 +90,7 @@ class _DashboardViewState extends State<DashboardView> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddTransactionView(token: widget.token),
+              builder: (context) => AddTransactionView(token: widget.token, onTransactionChanged: _refreshDashboard,),
             ),
           );
           if (result == true) {
@@ -194,8 +194,10 @@ class _DashboardViewState extends State<DashboardView> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            TransactionHistoryView(token: widget.token),
+                        builder: (context) => TransactionHistoryView(
+                          token: widget.token,
+                          onTransactionChanged: _refreshDashboard,  // Add this line
+                        ),
                       ),
                     );
                   },
@@ -220,6 +222,7 @@ class _DashboardViewState extends State<DashboardView> {
                       builder: (context) => EditTransactionView(
                         token: widget.token,
                         transaction: transaction,
+                        onTransactionChanged: _refreshDashboard,
                       ),
                     ),
                   );

@@ -8,10 +8,12 @@ import '../../utils/api_constants.dart';
 class EditTransactionView extends StatefulWidget {
   final String token;
   final Transaction transaction;
+  final VoidCallback onTransactionChanged;
 
   EditTransactionView({
     required this.token,
     required this.transaction,
+    required this.onTransactionChanged,
   });
 
   @override
@@ -56,7 +58,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
         category: _selectedCategory!,
         date: _selectedDate,
       );
-
+      widget.onTransactionChanged();
       Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
