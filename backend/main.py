@@ -444,3 +444,33 @@ def get_expense_categories(user_id: str = Depends(get_current_user)):
     
     categories = list(transactions_collection.aggregate(pipeline))
     return categories
+
+
+
+@app.get("/income-categories")
+def get_income_categories(user_id: str = Depends(get_current_user)):
+    # Aggregate incomes by category
+    pipeline = [
+        {
+            "$match": {
+                "user_id": user_id,
+                "type": "income"
+            }
+        },
+        {
+            "$group": {
+                "_id": "$category",
+                "total": {"$sum": "$amount"}
+            }
+        },
+        {
+            "$project": {
+                "category": "$_id",
+                "amount": "$total",
+                "_id": 0
+            }
+        }
+    ]
+    
+    categories = list(transactions_collection.aggregate(pipeline))
+    return categories
