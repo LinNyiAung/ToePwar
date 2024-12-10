@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../../utils/api_constants.dart';
+import '../auth/login_view.dart';
 import '../dashboard/widgets/drawer_widget.dart';
 
 class ProfileView extends StatefulWidget {
@@ -105,7 +106,14 @@ class _ProfileViewState extends State<ProfileView> {
               leading: Icon(Icons.logout),
               title: Text('Logout'),
               onTap: () {
-                Navigator.pushReplacementNamed(context, '/login');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginView(
+
+                    ),
+                  ),
+                );
               },
             ),
           ],

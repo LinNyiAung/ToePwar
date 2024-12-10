@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toepwar/views/auth/login_view.dart';
 import 'package:toepwar/views/dashboard/dashboard_view.dart';
 import 'package:toepwar/views/profile/profile_view.dart'; // Import profile view
 import 'package:http/http.dart' as http;
@@ -139,6 +140,14 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             onTap: () {
               // Add your logout functionality here
               Navigator.pop(context); // Close the drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoginView(
+
+                  ),
+                ),
+              );
             },
           ),
         ],
