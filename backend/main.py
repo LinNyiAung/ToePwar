@@ -414,3 +414,33 @@ def update_goal(
             status_code=400,
             detail="Invalid goal ID format"
         )
+    
+
+
+@app.get("/expense-categories")
+def get_expense_categories(user_id: str = Depends(get_current_user)):
+    # Aggregate expenses by category
+    pipeline = [
+        {
+            "$match": {
+                "user_id": user_id,
+                "type": "expense"
+            }
+        },
+        {
+            "$group": {
+                "_id": "$category",
+                "total": {"$sum": "$amount"}
+            }
+        },
+        {
+            "$project": {
+                "category": "$_id",
+                "amount": "$total",
+                "_id": 0
+            }
+        }
+    ]
+    
+    categories = list(transactions_collection.aggregate(pipeline))
+    return categories

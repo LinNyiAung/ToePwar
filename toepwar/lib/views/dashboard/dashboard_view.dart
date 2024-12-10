@@ -5,6 +5,7 @@ import '../../controllers/transaction_controller.dart';
 import '../../models/dashboard_model.dart';
 import '../../models/goal_model.dart';
 import '../../models/transaction_model.dart';
+import '../charts/expense_structure_pie.dart';
 import '../goals/goals_view.dart';
 import '../transaction/add_transaction_view.dart';
 import '../transaction/edit_transaction_view.dart';
@@ -118,6 +119,8 @@ class _DashboardViewState extends State<DashboardView> {
         _buildRecentTransactions(transactions),
         SizedBox(height: 24),
         _buildRecentGoals(dashboard.recentGoals),
+        SizedBox(height: 24),
+        ExpensePieChart(token: widget.token),
       ],
     );
   }
