@@ -5,6 +5,7 @@ import 'package:toepwar/views/profile/profile_view.dart'; // Import profile view
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../utils/api_constants.dart';
+import '../../goals/goals_view.dart';
 import '../../transaction/transaction_history_view.dart';
 
 
@@ -130,6 +131,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     token: widget.token,
                     onTransactionChanged: widget.onTransactionChanged,
                   ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.savings),
+            title: Text('Saving Goals'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GoalsView(token: widget.token),
                 ),
               );
             },
