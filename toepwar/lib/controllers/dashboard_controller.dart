@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/dashboard_model.dart';
+import '../models/goal_model.dart';
 import '../models/transaction_model.dart';
 import '../utils/api_constants.dart';
 
@@ -17,13 +18,38 @@ class DashboardController {
       );
 
       if (response.statusCode == 200) {
-        print('DFashboard api response: ${response.body}');
-        return Dashboard.fromJson(json.decode(response.body));
+        final dashboardData = json.decode(response.body);
+        // Fetch recent goals separately and combine with dashboard data
+        final recentGoals = await getRecentGoals();
+        dashboardData['recent_goals'] = recentGoals.map((g) => g.toJson()).toList();
+        return Dashboard.fromJson(dashboardData);
       } else {
         throw Exception('Failed to load dashboard data');
       }
     } catch (e) {
       throw Exception('Failed to get dashboard data: $e');
+    }
+  }
+
+  Future<List<Goal>> getRecentGoals() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/goals'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> goalsJson = data['goals'];
+        return goalsJson
+            .map((json) => Goal.fromJson(json))
+            .take(3)  // Only take the 3 most recent goals
+            .toList();
+      } else {
+        throw Exception('Failed to load goals');
+      }
+    } catch (e) {
+      throw Exception('Failed to get goals: $e');
     }
   }
 

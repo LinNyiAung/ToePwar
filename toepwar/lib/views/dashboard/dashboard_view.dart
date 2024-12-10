@@ -3,7 +3,9 @@ import 'package:toepwar/views/dashboard/widgets/drawer_widget.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/dashboard_model.dart';
+import '../../models/goal_model.dart';
 import '../../models/transaction_model.dart';
+import '../goals/goals_view.dart';
 import '../transaction/add_transaction_view.dart';
 import '../transaction/edit_transaction_view.dart';
 import '../transaction/transaction_history_view.dart';
@@ -114,6 +116,8 @@ class _DashboardViewState extends State<DashboardView> {
         _buildSummaryCard(dashboard),
         SizedBox(height: 24),
         _buildRecentTransactions(transactions),
+        SizedBox(height: 24),
+        _buildRecentGoals(dashboard.recentGoals),
       ],
     );
   }
@@ -171,6 +175,77 @@ class _DashboardViewState extends State<DashboardView> {
           ),
         ),
       ],
+    );
+  }
+
+
+  Widget _buildRecentGoals(List<Goal> goals) {
+    if (goals.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child: Text('No active goals'),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Goals',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GoalsView(token: widget.token),
+                      ),
+                    );
+                  },
+                  child: Text('See All'),
+                ),
+              ],
+            ),
+          ),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: goals.length,
+            separatorBuilder: (context, index) => Divider(height: 1),
+            itemBuilder: (context, index) {
+              final goal = goals[index];
+              return ListTile(
+                title: Text(goal.name),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LinearProgressIndicator(
+                      value: goal.progress / 100,
+                      backgroundColor: Colors.grey[200],
+                      color: goal.completed ? Colors.green : Theme.of(context).primaryColor,
+                    ),
+                    SizedBox(height: 4),
+                    Text('\$${goal.currentAmount.toStringAsFixed(2)} / \$${goal.targetAmount.toStringAsFixed(2)}'),
+                  ],
+                ),
+                trailing: Text('${goal.progress.toStringAsFixed(1)}%'),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

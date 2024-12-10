@@ -1,16 +1,19 @@
 import 'package:toepwar/models/transaction_model.dart';
+import 'package:toepwar/models/goal_model.dart';
 
 class Dashboard {
   final double totalIncome;
   final double totalExpense;
   final double balance;
   final List<Transaction> recentTransactions;
+  final List<Goal> recentGoals;  // Added recentGoals
 
   Dashboard({
     required this.totalIncome,
     required this.totalExpense,
     required this.balance,
     required this.recentTransactions,
+    required this.recentGoals,  // Added recentGoals parameter
   });
 
   factory Dashboard.fromJson(Map<String, dynamic> json) {
@@ -38,11 +41,23 @@ class Dashboard {
       }
     }
 
+    List<Goal> goals = [];
+    if (json['recent_goals'] != null) {
+      try {
+        goals = (json['recent_goals'] as List)
+            .map((goal) => Goal.fromJson(goal))
+            .toList();
+      } catch (e) {
+        print('Error parsing goals: $e');
+      }
+    }
+
     return Dashboard(
       totalIncome: parseDouble(json['income']),
       totalExpense: parseDouble(json['expense']),
       balance: parseDouble(json['balance']),
       recentTransactions: transactions,
+      recentGoals: goals,
     );
   }
 
@@ -51,9 +66,8 @@ class Dashboard {
       'income': totalIncome,
       'expense': totalExpense,
       'balance': balance,
-      'recent_transactions': recentTransactions
-          .map((transaction) => transaction.toJson())
-          .toList(),
+      'recent_transactions': recentTransactions.map((transaction) => transaction.toJson()).toList(),
+      'recent_goals': recentGoals.map((goal) => goal.toJson()).toList(),
     };
   }
 }
