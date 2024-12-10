@@ -9,9 +9,12 @@ import '../../utils/api_constants.dart';
 
 class ExpensePieChart extends StatefulWidget {
   final String token;
+  final Key? refreshKey;
 
-  ExpensePieChart({required this.token});
-
+  ExpensePieChart({
+    required this.token,
+    this.refreshKey,
+  }) : super(key: refreshKey);
   @override
   _ExpensePieChartState createState() => _ExpensePieChartState();
 }

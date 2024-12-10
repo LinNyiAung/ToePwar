@@ -5,6 +5,7 @@ import 'package:toepwar/views/profile/profile_view.dart'; // Import profile view
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../utils/api_constants.dart';
+import '../../charts/expense_structure_view.dart';
 import '../../goals/goals_view.dart';
 import '../../transaction/transaction_history_view.dart';
 
@@ -131,6 +132,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     token: widget.token,
                     onTransactionChanged: widget.onTransactionChanged,
                   ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.bar_chart),
+            title: Text('Expense Charts'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ExpenseStructureView(token: widget.token,),
                 ),
               );
             },
