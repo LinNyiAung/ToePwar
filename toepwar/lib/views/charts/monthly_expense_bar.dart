@@ -20,6 +20,8 @@ class MonthlyExpenseChart extends StatefulWidget {
 class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
   List<MonthlyExpense> _monthlyExpenses = [];
   bool _isLoading = true;
+  int? _selectedYear;
+  List<int> _availableYears = [];
 
   @override
   void initState() {
@@ -29,7 +31,6 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
 
   Future<void> _fetchMonthlyExpenses() async {
     try {
-      // Get all transactions
       final response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/gettransactions'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
@@ -37,33 +38,39 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
 
       if (response.statusCode == 200) {
         final List<dynamic> transactions = json.decode(response.body);
-
-        // Process transactions to get monthly totals
         Map<String, double> monthlyTotals = {};
+        Set<int> years = {};
 
+        // Process transactions to get monthly totals and available years
         for (var transaction in transactions) {
           if (transaction['type'] == 'expense') {
             DateTime date = DateTime.parse(transaction['date']);
             String monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+            years.add(date.year);
 
             monthlyTotals[monthKey] = (monthlyTotals[monthKey] ?? 0) +
                 (transaction['amount'] as num).toDouble();
           }
         }
 
-        // Convert to list and sort by date
-        _monthlyExpenses = monthlyTotals.entries.map((entry) {
+        // Update available years
+        _availableYears = years.toList()..sort((a, b) => b.compareTo(a));
+
+        // Set selected year to most recent if not already set
+        if (_selectedYear == null && _availableYears.isNotEmpty) {
+          _selectedYear = _availableYears.first;
+        }
+
+        // Filter expenses for selected year
+        _monthlyExpenses = monthlyTotals.entries
+            .where((entry) => entry.key.startsWith(_selectedYear.toString()))
+            .map((entry) {
           return MonthlyExpense(
             month: entry.key,
             amount: entry.value,
           );
         }).toList()
           ..sort((a, b) => a.month.compareTo(b.month));
-
-        // Keep only the last 6 months
-        if (_monthlyExpenses.length > 6) {
-          _monthlyExpenses = _monthlyExpenses.sublist(_monthlyExpenses.length - 6);
-        }
 
         setState(() => _isLoading = false);
       } else {
@@ -80,7 +87,26 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final monthIndex = int.parse(parts[1]) - 1;
-    return '${months[monthIndex]}\n${parts[0].substring(2)}';
+    return months[monthIndex];
+  }
+
+  Widget _buildYearDropdown() {
+    return DropdownButton<int>(
+      value: _selectedYear,
+      hint: Text('Select Year'),
+      items: _availableYears.map((year) {
+        return DropdownMenuItem<int>(
+          value: year,
+          child: Text(year.toString()),
+        );
+      }).toList(),
+      onChanged: (int? newValue) {
+        setState(() {
+          _selectedYear = newValue;
+        });
+        _fetchMonthlyExpenses();
+      },
+    );
   }
 
   @override
@@ -93,8 +119,26 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
       return Card(
         elevation: 2,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          child: Center(child: Text('No monthly expense data available')),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Monthly Expenses',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  _buildYearDropdown(),
+                ],
+              ),
+              SizedBox(height: 20),
+              Text('No expense data available for selected year'),
+            ],
+          ),
         ),
       );
     }
@@ -105,12 +149,18 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
-              'Monthly Expenses',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Monthly Expenses',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                _buildYearDropdown(),
+              ],
             ),
             SizedBox(height: 20),
             AspectRatio(
@@ -121,7 +171,6 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
                   maxY: _monthlyExpenses.map((e) => e.amount).reduce((a, b) => a > b ? a : b) * 1.2,
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         return BarTooltipItem(
                           '\$${rod.toY.toStringAsFixed(2)}',
