@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../../utils/api_constants.dart';
 
@@ -23,6 +24,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
   List<ExpenseCategory> _categories = [];
   bool _isLoading = true;
   int _touchedIndex = -1;
+  DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
@@ -31,9 +33,20 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
   }
 
   Future<void> _fetchExpenseCategories() async {
+    setState(() => _isLoading = true);
+
     try {
+      String url = '${ApiConstants.baseUrl}/expense-categories';
+
+      // Add date range parameters if selected
+      if (_selectedDateRange != null) {
+        final startDate = _selectedDateRange!.start.toIso8601String();
+        final endDate = _selectedDateRange!.end.toIso8601String();
+        url += '?start_date=$startDate&end_date=$endDate';
+      }
+
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/expense-categories'),
+        Uri.parse(url),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -42,19 +55,82 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
         setState(() {
           _categories = data
               .map((item) => ExpenseCategory(
-                    category: item['category'],
-                    amount: item['amount'].toDouble(),
-                  ))
+            category: item['category'],
+            amount: item['amount'].toDouble(),
+          ))
               .toList();
-          _isLoading = false;
         });
       } else {
         throw Exception('Failed to load expense categories');
       }
     } catch (e) {
       print('Error fetching expense categories: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load expense data')),
+      );
+    } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _showDateRangePicker() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      initialDateRange: _selectedDateRange,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            appBarTheme: AppBarTheme(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() => _selectedDateRange = picked);
+      _fetchExpenseCategories();
+    }
+  }
+
+  Widget _buildDateRangeFilter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            _selectedDateRange != null
+                ? '${DateFormat('MMM d, y').format(_selectedDateRange!.start)} - '
+                '${DateFormat('MMM d, y').format(_selectedDateRange!.end)}'
+                : 'All Time',
+            style: TextStyle(fontSize: 14),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.date_range),
+                onPressed: _showDateRangePicker,
+                tooltip: 'Select Date Range',
+              ),
+              if (_selectedDateRange != null)
+                IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    setState(() => _selectedDateRange = null);
+                    _fetchExpenseCategories();
+                  },
+                  tooltip: 'Clear Date Filter',
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   List<PieChartSectionData> _getSections() {
@@ -102,12 +178,18 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
 
     if (_categories.isEmpty) {
       return Card(
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 0),
-            child: Center(
-                child: Text('No expense data available for chart')),
-          ));
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildDateRangeFilter(),
+              SizedBox(height: 16),
+              Text('No expense data available for selected period'),
+            ],
+          ),
+        ),
+      );
     }
 
     return Card(
@@ -123,6 +205,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
             ),
           ),
           SizedBox(height: 10),
+          _buildDateRangeFilter(),
           AspectRatio(
             aspectRatio: 1.3,
             child: PieChart(
@@ -152,7 +235,6 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
           SizedBox(height: 20),
         ],
       ),
-
     );
   }
 

@@ -418,14 +418,28 @@ def update_goal(
 
 
 @app.get("/expense-categories")
-def get_expense_categories(user_id: str = Depends(get_current_user)):
+def get_expense_categories(
+    user_id: str = Depends(get_current_user),
+    start_date: str | None = None,
+    end_date: str | None = None
+):
+    # Base match condition
+    match_condition = {
+        "user_id": user_id,
+        "type": "expense"
+    }
+    
+    # Add date filtering if dates are provided
+    if start_date and end_date:
+        match_condition["date"] = {
+            "$gte": datetime.fromisoformat(start_date),
+            "$lte": datetime.fromisoformat(end_date)
+        }
+    
     # Aggregate expenses by category
     pipeline = [
         {
-            "$match": {
-                "user_id": user_id,
-                "type": "expense"
-            }
+            "$match": match_condition
         },
         {
             "$group": {
