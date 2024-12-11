@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toepwar/views/charts/daily_expense_bar.dart';
 import 'expense_structure_pie.dart';
 import 'monthly_expense_bar.dart';
 import '../dashboard/widgets/drawer_widget.dart';
@@ -16,6 +17,7 @@ class ExpenseStructureView extends StatefulWidget {
 class _ExpenseStructureViewState extends State<ExpenseStructureView> {
   Key _refreshKey = UniqueKey();
   Key _refreshKey2 = UniqueKey();
+  Key _refreshKey3 = UniqueKey();
 
 
   void _refreshData() {
@@ -23,6 +25,7 @@ class _ExpenseStructureViewState extends State<ExpenseStructureView> {
       // Update the key to force rebuild of child widgets
       _refreshKey = UniqueKey();
       _refreshKey2 = UniqueKey();
+      _refreshKey3 = UniqueKey();
     });
   }
 
@@ -48,9 +51,11 @@ class _ExpenseStructureViewState extends State<ExpenseStructureView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              ExpensePieChart(token: widget.token, refreshKey: _refreshKey2,),
+              SizedBox(height: 20),
               MonthlyExpenseChart(token: widget.token,refreshKey: _refreshKey,),
               SizedBox(height: 20),
-              ExpensePieChart(token: widget.token, refreshKey: _refreshKey2,),
+              DailyExpenseChart(token: widget.token, refreshKey: _refreshKey3,),
             ],
           ),
         ),
