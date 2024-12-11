@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../../utils/api_constants.dart';
 
 class IncomePieChart extends StatefulWidget {
   final String token;
+  final Key? refreshKey;
 
-  IncomePieChart({required this.token});
+  IncomePieChart({
+    required this.token,
+    this.refreshKey,
+  }) : super(key: refreshKey);
 
   @override
   _IncomePieChartState createState() => _IncomePieChartState();
@@ -17,6 +22,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
   List<IncomeCategory> _categories = [];
   bool _isLoading = true;
   int _touchedIndex = -1;
+  DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
@@ -25,9 +31,20 @@ class _IncomePieChartState extends State<IncomePieChart> {
   }
 
   Future<void> _fetchIncomeCategories() async {
+    setState(() => _isLoading = true);
+
     try {
+      String url = '${ApiConstants.baseUrl}/income-categories';
+
+      // Add date range parameters if selected
+      if (_selectedDateRange != null) {
+        final startDate = _selectedDateRange!.start.toIso8601String();
+        final endDate = _selectedDateRange!.end.toIso8601String();
+        url += '?start_date=$startDate&end_date=$endDate';
+      }
+
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/income-categories'),
+        Uri.parse(url),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -36,19 +53,82 @@ class _IncomePieChartState extends State<IncomePieChart> {
         setState(() {
           _categories = data
               .map((item) => IncomeCategory(
-                    category: item['category'],
-                    amount: item['amount'].toDouble(),
-                  ))
+            category: item['category'],
+            amount: item['amount'].toDouble(),
+          ))
               .toList();
-          _isLoading = false;
         });
       } else {
         throw Exception('Failed to load income categories');
       }
     } catch (e) {
       print('Error fetching income categories: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load income data')),
+      );
+    } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _showDateRangePicker() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      initialDateRange: _selectedDateRange,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            appBarTheme: AppBarTheme(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() => _selectedDateRange = picked);
+      _fetchIncomeCategories();
+    }
+  }
+
+  Widget _buildDateRangeFilter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            _selectedDateRange != null
+                ? '${DateFormat('MMM d, y').format(_selectedDateRange!.start)} - '
+                '${DateFormat('MMM d, y').format(_selectedDateRange!.end)}'
+                : 'All Time',
+            style: TextStyle(fontSize: 14),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.date_range),
+                onPressed: _showDateRangePicker,
+                tooltip: 'Select Date Range',
+              ),
+              if (_selectedDateRange != null)
+                IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    setState(() => _selectedDateRange = null);
+                    _fetchIncomeCategories();
+                  },
+                  tooltip: 'Clear Date Filter',
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   List<PieChartSectionData> _getSections() {
@@ -97,8 +177,14 @@ class _IncomePieChartState extends State<IncomePieChart> {
       return Card(
         elevation: 2,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 0),
-          child: Center(child: Text('No income data available for chart')),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildDateRangeFilter(),
+              SizedBox(height: 16),
+              Text('No income data available for selected period'),
+            ],
+          ),
         ),
       );
     }
@@ -116,6 +202,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
             ),
           ),
           SizedBox(height: 10),
+          _buildDateRangeFilter(),
           AspectRatio(
             aspectRatio: 1.3,
             child: PieChart(
