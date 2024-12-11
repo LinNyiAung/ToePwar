@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:toepwar/views/auth/login_view.dart';
+import 'package:toepwar/views/charts/income_structure_view.dart';
 import 'package:toepwar/views/dashboard/dashboard_view.dart';
 import 'package:toepwar/views/profile/profile_view.dart'; // Import profile view
 import 'package:http/http.dart' as http;
@@ -144,6 +145,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ExpenseStructureView(token: widget.token,),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.bar_chart),
+            title: Text('Income Charts'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => IncomeStructureView(token: widget.token,),
                 ),
               );
             },
