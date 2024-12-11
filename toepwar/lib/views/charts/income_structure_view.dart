@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toepwar/views/charts/daily_income_bar.dart';
 import 'package:toepwar/views/charts/income_structure_pie.dart';
 import 'package:toepwar/views/charts/monthly_income_bar.dart';
 
@@ -18,6 +19,7 @@ class IncomeStructureView extends StatefulWidget {
 class _IncomeStructureViewState extends State<IncomeStructureView> {
   Key _refreshKey = UniqueKey();
   Key _refreshKey2 = UniqueKey();
+  Key _refreshKey3 = UniqueKey();
 
 
   void _refreshData() {
@@ -25,6 +27,7 @@ class _IncomeStructureViewState extends State<IncomeStructureView> {
       // Update the key to force rebuild of child widgets
       _refreshKey = UniqueKey();
       _refreshKey2 = UniqueKey();
+      _refreshKey3 = UniqueKey();
     });
   }
 
@@ -50,9 +53,11 @@ class _IncomeStructureViewState extends State<IncomeStructureView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              IncomePieChart(token: widget.token, refreshKey: _refreshKey2,),
+              SizedBox(height: 20),
               MonthlyIncomeChart(token: widget.token,refreshKey: _refreshKey,),
               SizedBox(height: 20),
-              IncomePieChart(token: widget.token, refreshKey: _refreshKey2,),
+              DailyIncomeChart(token: widget.token, refreshKey: _refreshKey3,),
             ],
           ),
         ),
