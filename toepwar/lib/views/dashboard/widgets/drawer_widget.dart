@@ -6,6 +6,7 @@ import 'package:toepwar/views/profile/profile_view.dart'; // Import profile view
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../utils/api_constants.dart';
+import '../../ai/financial-forecast-view.dart';
 import '../../charts/expense_structure_view.dart';
 import '../../goals/goals_view.dart';
 import '../../reports/financial_report_view.dart';
@@ -182,6 +183,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => FinancialReportView(token: widget.token),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.book),
+            title: Text('AI Forecasting'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FinancialForecastView(token: widget.token),
                 ),
               );
             },
