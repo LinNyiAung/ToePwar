@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../../../utils/api_constants.dart';
 import '../../charts/expense_structure_view.dart';
 import '../../goals/goals_view.dart';
+import '../../reports/financial_report_view.dart';
 import '../../transaction/transaction_history_view.dart';
 
 
@@ -169,6 +170,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => GoalsView(token: widget.token),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.book),
+            title: Text('Financial Report'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FinancialReportView(token: widget.token),
                 ),
               );
             },
