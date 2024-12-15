@@ -1,3 +1,7 @@
 {
-    "cmake.sourceDirectory": "F:/ToePwar/toepwar/linux"
+    "cmake.sourceDirectory": "F:/ToePwar/toepwar/linux",
+    "python.analysis.extraPaths": [
+        "./backend",
+        "./backend"
+    ]
 }
