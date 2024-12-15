@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import '../../utils/api_constants.dart';
 import '../dashboard/widgets/drawer_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FinancialForecastView extends StatefulWidget {
   final String token;
@@ -19,8 +20,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   Map<String, dynamic>? _forecastData;
   bool _isLoading = false;
   int _forecastMonths = 6;
-  String? _forecastInsight;
-  List<String> _recommendations = [];
+
 
   @override
   void initState() {
@@ -40,7 +40,6 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       if (response.statusCode == 200) {
         setState(() {
           _forecastData = json.decode(response.body);
-          _generateInsightsAndRecommendations();
         });
       } else {
         throw Exception('Failed to load forecast');
@@ -55,79 +54,6 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   }
 
 
-  void _generateInsightsAndRecommendations() {
-    if (_forecastData == null) return;
-
-    final incomeForecast = _forecastData!['income_forecast'];
-    final expenseForecast = _forecastData!['expense_forecast'];
-    final savingsForecast = _forecastData!['savings_forecast'];
-    final categoryForecasts = _forecastData!['category_forecasts'];
-    final goalProjections = _forecastData!['goal_projections'];
-
-    // Reset previous insights and recommendations
-    _forecastInsight = null;
-    _recommendations = [];
-
-    // Income Trend Analysis
-    double averageIncome = incomeForecast.map((f) => f['amount']).reduce((a, b) => a + b) / incomeForecast.length;
-    double averageExpenses = expenseForecast.map((f) => f['amount']).reduce((a, b) => a + b) / expenseForecast.length;
-    double averageSavings = savingsForecast.map((f) => f['amount']).reduce((a, b) => a + b) / savingsForecast.length;
-
-    // Income Trend Insight
-    if (averageIncome < averageExpenses) {
-      _forecastInsight = "⚠️ Warning: Your projected expenses are higher than your income.";
-      _recommendations.add("Consider reducing expenses or finding additional income sources.");
-    } else if (averageSavings < 0) {
-      _forecastInsight = "🚨 Critical: Your forecast shows negative savings.";
-      _recommendations.add("Urgently review and cut non-essential expenses.");
-      _recommendations.add("Explore ways to increase your income.");
-    } else {
-      _forecastInsight = "👍 Good Outlook: Your income is projected to cover expenses with potential savings.";
-    }
-
-    // Goal Projection Analysis
-    if (goalProjections != null && goalProjections.isNotEmpty) {
-      goalProjections.forEach((goal) {
-        double probability = goal['probability'];
-        if (probability < 50) {
-          _recommendations.add("Goal Alert: ${goal['name']} has low probability of completion. Consider adjusting your savings strategy.");
-        }
-      });
-    }
-
-    // Expense Category Analysis
-    final expenseCategories = categoryForecasts['expense'];
-    if (expenseCategories != null) {
-      var topExpenseCategory = _findTopCategory(expenseCategories);
-      if (topExpenseCategory != null) {
-        _recommendations.add("Top Expense Category: Focus on reducing ${topExpenseCategory['category']} expenses.");
-      }
-    }
-
-    // Savings Rate Recommendation
-    double savingsRate = (averageSavings / averageIncome) * 100;
-    if (savingsRate < 10) {
-      _recommendations.add("Savings Tip: Aim to increase your savings rate. Currently, you're saving less than 10% of income.");
-    } else if (savingsRate >= 10 && savingsRate < 20) {
-      _recommendations.add("Savings Progress: Good job! You're saving between 10-20% of your income.");
-    } else {
-      _recommendations.add("Savings Champion: Excellent! You're saving over 20% of your income.");
-    }
-  }
-
-
-  Map<String, dynamic>? _findTopCategory(Map<String, dynamic> categories) {
-    if (categories.isEmpty) return null;
-
-    var sortedCategories = categories.entries.toList()
-      ..sort((a, b) => b.value.last['amount'].compareTo(a.value.last['amount']));
-
-    var topCategory = sortedCategories.first;
-    return {
-      'category': topCategory.key,
-      'amount': topCategory.value.last['amount']
-    };
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -390,6 +316,11 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
 
 
   Widget _buildInsightsAndRecommendations() {
+    if (_forecastData == null) return SizedBox.shrink();
+
+    final forecastInsight = _forecastData!['forecast_insight'];
+    final recommendations = List<String>.from(_forecastData!['recommendations'] ?? []);
+
     return Card(
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -398,32 +329,34 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
           children: [
             Text('Financial Insights', style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: 16),
-            if (_forecastInsight != null)
+            if (forecastInsight != null)
               Padding(
                 padding: EdgeInsets.only(bottom: 16),
                 child: Text(
-                  _forecastInsight!,
+                  forecastInsight,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-            Text('Recommendations:', style: Theme.of(context).textTheme.titleMedium),
-            SizedBox(height: 8),
-            ..._recommendations.map((recommendation) => Padding(
-              padding: EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      recommendation,
-                      style: Theme.of(context).textTheme.bodyMedium,
+            if (recommendations.isNotEmpty) ...[
+              Text('Recommendations:', style: Theme.of(context).textTheme.titleMedium),
+              SizedBox(height: 8),
+              ...recommendations.map((recommendation) => Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        recommendation,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            )).toList(),
+                  ],
+                ),
+              )).toList(),
+            ],
           ],
         ),
       ),

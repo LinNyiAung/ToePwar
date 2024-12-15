@@ -8,6 +8,91 @@ import pandas as pd
 
 router = APIRouter()
 
+
+def generate_insights_and_recommendations(forecast_data: dict) -> dict:
+    insights = {
+        'forecast_insight': None,
+        'recommendations': []
+    }
+    
+    try:
+        # Extract forecast components
+        income_forecast = forecast_data['income_forecast']
+        expense_forecast = forecast_data['expense_forecast']
+        savings_forecast = forecast_data['savings_forecast']
+        category_forecasts = forecast_data['category_forecasts']
+        goal_projections = forecast_data['goal_projections']
+
+        # Calculate averages
+        average_income = sum(f['amount'] for f in income_forecast) / len(income_forecast)
+        average_expenses = sum(f['amount'] for f in expense_forecast) / len(expense_forecast)
+        average_savings = sum(f['amount'] for f in savings_forecast) / len(savings_forecast)
+
+        # Generate main insight based on financial health
+        if average_income < average_expenses:
+            insights['forecast_insight'] = "Warning: Your projected expenses are higher than your income."
+            insights['recommendations'].append("Consider reducing expenses or finding additional income sources.")
+        elif average_savings < 0:
+            insights['forecast_insight'] = "Critical: Your forecast shows negative savings."
+            insights['recommendations'].append("Urgently review and cut non-essential expenses.")
+            insights['recommendations'].append("Explore ways to increase your income.")
+        else:
+            insights['forecast_insight'] = "Good Outlook: Your income is projected to cover expenses with potential savings."
+
+        # Goal-based recommendations
+        if goal_projections:
+            for goal in goal_projections:
+                probability = goal['probability']
+                if probability < 50:
+                    insights['recommendations'].append(
+                        f"Goal Alert: {goal['name']} has low probability of completion. Consider adjusting your savings strategy."
+                    )
+
+        # Expense category analysis
+        if 'expense' in category_forecasts:
+            top_expense = find_top_category(category_forecasts['expense'])
+            if top_expense:
+                insights['recommendations'].append(
+                    f"Top Expense Category: Focus on reducing {top_expense['category']} expenses."
+                )
+
+        # Savings rate analysis
+        savings_rate = (average_savings / average_income) * 100 if average_income > 0 else 0
+        if savings_rate < 10:
+            insights['recommendations'].append(
+                "Savings Tip: Aim to increase your savings rate. Currently, you're saving less than 10% of income."
+            )
+        elif savings_rate >= 10 and savings_rate < 20:
+            insights['recommendations'].append(
+                "Savings Progress: Good job! You're saving between 10-20% of your income."
+            )
+        else:
+            insights['recommendations'].append(
+                "Savings Champion: Excellent! You're saving over 20% of your income."
+            )
+
+    except Exception as e:
+        insights['forecast_insight'] = "Unable to generate detailed insights at this time."
+        insights['recommendations'].append("Please ensure your financial data is up to date.")
+
+    return insights
+
+def find_top_category(categories: dict) -> dict:
+    if not categories:
+        return None
+    
+    # Find category with highest amount in the latest forecast
+    top_category = max(
+        categories.items(),
+        key=lambda x: x[1][-1]['amount'] if x[1] else 0
+    )
+    
+    return {
+        'category': top_category[0],
+        'amount': top_category[1][-1]['amount'] if top_category[1] else 0
+    }
+
+
 @router.get("/financial-forecast")
 def get_financial_forecast(
     user_id: str = Depends(get_current_user),
@@ -87,13 +172,21 @@ def get_financial_forecast(
                     'probability': calculate_goal_probability(monthly_required, savings_forecast)
                 })
 
-        return {
+        forecast_data = {
             'income_forecast': income_forecast,
             'expense_forecast': expense_forecast,
             'savings_forecast': savings_forecast,
             'category_forecasts': category_forecasts,
             'goal_projections': goal_projections
         }
+        
+        # Generate insights and recommendations
+        insights = generate_insights_and_recommendations(forecast_data)
+        
+        # Add insights to the response
+        forecast_data.update(insights)
+        
+        return forecast_data
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Forecast calculation failed: {str(e)}")
