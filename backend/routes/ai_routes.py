@@ -14,7 +14,9 @@ def generate_insights_and_recommendations(forecast_data: dict) -> dict:
         'forecast_insight': None,
         'recommendations': [],
         'risk_level': None,
-        'opportunity_areas': []
+        'opportunity_areas': [],
+        'key_metrics': {},  # New section for important financial metrics
+        'alerts': []  # New section for immediate attention items
     }
     
     try:
@@ -25,83 +27,141 @@ def generate_insights_and_recommendations(forecast_data: dict) -> dict:
         category_forecasts = forecast_data['category_forecasts']
         goal_projections = forecast_data['goal_projections']
 
-        # Calculate key metrics
+        # Calculate enhanced metrics
         income_trend = calculate_trend([f['amount'] for f in income_forecast])
         expense_trend = calculate_trend([f['amount'] for f in expense_forecast])
         savings_trend = calculate_trend([f['amount'] for f in savings_forecast])
         
-        average_income = sum(f['amount'] for f in income_forecast) / len(income_forecast)
-        average_expenses = sum(f['amount'] for f in expense_forecast) / len(expense_forecast)
-        average_savings = sum(f['amount'] for f in savings_forecast) / len(savings_forecast)
+        recent_months = 3
+        recent_income = [f['amount'] for f in income_forecast[:recent_months]]
+        recent_expenses = [f['amount'] for f in expense_forecast[:recent_months]]
+        
+        average_income = sum(recent_income) / len(recent_income)
+        average_expenses = sum(recent_expenses) / len(recent_expenses)
+        average_savings = sum(f['amount'] for f in savings_forecast[:recent_months]) / recent_months
         savings_rate = (average_savings / average_income) * 100 if average_income > 0 else 0
+        expense_to_income_ratio = (average_expenses / average_income * 100) if average_income > 0 else 0
 
-        # Assess financial health and set risk level
+        # Store key metrics
+        insights['key_metrics'] = {
+            'savings_rate': round(savings_rate, 1),
+            'expense_ratio': round(expense_to_income_ratio, 1),
+            'income_trend': round(income_trend, 1),
+            'expense_trend': round(expense_trend, 1),
+            'savings_trend': round(savings_trend, 1),
+            'monthly_savings': round(average_savings, 2)
+        }
+
+        # Enhanced risk assessment
+        risk_factors = []
         if average_income < average_expenses:
+            risk_factors.append('negative_cash_flow')
+        if savings_rate < 10:
+            risk_factors.append('low_savings')
+        if expense_to_income_ratio > 80:
+            risk_factors.append('high_expenses')
+        if income_trend < -5:
+            risk_factors.append('declining_income')
+        
+        # Determine risk level based on number of risk factors
+        if len(risk_factors) >= 3:
             insights['risk_level'] = 'High'
-            insights['forecast_insight'] = "Critical: Your projected expenses exceed income, indicating significant financial stress."
-        elif savings_rate < 10:
+        elif len(risk_factors) >= 1:
             insights['risk_level'] = 'Medium'
-            insights['forecast_insight'] = f"Caution: Your savings rate of {savings_rate:.1f}% is below recommended levels."
         else:
             insights['risk_level'] = 'Low'
-            insights['forecast_insight'] = f"Positive: Your forecast shows a healthy savings rate of {savings_rate:.1f}%."
 
-        # Analyze trends and provide context
-        if income_trend < 0:
-            insights['recommendations'].append({
-                'category': 'Income',
-                'priority': 'High',
-                'action': "Your income is trending downward. Consider diversifying income sources or exploring career development opportunities.",
-                'impact': "Critical for financial stability"
+        # Generate main insight based on the most critical factor
+        if 'negative_cash_flow' in risk_factors:
+            insights['forecast_insight'] = f"Critical: Monthly expenses (${average_expenses:.0f}) exceed income (${average_income:.0f}). Immediate action required to balance your budget."
+        elif 'high_expenses' in risk_factors:
+            insights['forecast_insight'] = f"Warning: Your expenses consume {expense_to_income_ratio:.1f}% of income, leaving little room for savings and emergencies."
+        elif 'declining_income' in risk_factors:
+            insights['forecast_insight'] = f"Caution: Your income shows a declining trend of {income_trend:.1f}% over the forecast period."
+        elif 'low_savings' in risk_factors:
+            insights['forecast_insight'] = f"Notice: Your savings rate of {savings_rate:.1f}% is below the recommended 20%. Consider optimizing expenses."
+        else:
+            insights['forecast_insight'] = f"Positive: Your finances show healthy patterns with a {savings_rate:.1f}% savings rate and balanced expense ratio."
+
+        # Generate immediate alerts for critical situations
+        if average_expenses > average_income:
+            insights['alerts'].append({
+                'type': 'critical',
+                'message': f"Monthly deficit of ${average_expenses - average_income:.2f}",
+                'action': "Review and cut non-essential expenses immediately"
             })
         
-        if expense_trend > income_trend:
-            insights['recommendations'].append({
-                'category': 'Expenses',
-                'priority': 'High',
-                'action': "Your expenses are growing faster than income. Review and optimize your monthly expenses.",
-                'impact': "Essential for maintaining financial balance"
+        if savings_rate < 5:
+            insights['alerts'].append({
+                'type': 'warning',
+                'message': "Critically low savings rate",
+                'action': "Increase emergency fund contributions"
             })
 
-        # Category-specific analysis
+        # Enhanced category analysis
         if 'expense' in category_forecasts:
-            high_growth_categories = find_high_growth_categories(category_forecasts['expense'])
-            for category, growth in high_growth_categories:
-                insights['recommendations'].append({
-                    'category': 'Budget',
-                    'priority': 'Medium',
-                    'action': f"Your {category} expenses show {growth:.1f}% projected growth. Consider setting a budget cap.",
-                    'impact': "Important for expense management"
-                })
-
-        # Goal achievement analysis
-        if goal_projections:
-            for goal in goal_projections:
-                probability = goal['probability']
-                monthly_required = goal['monthly_required']
+            expense_categories = category_forecasts['expense']
+            total_expenses = sum(cat[-1]['amount'] for cat in expense_categories.values())
+            
+            # Identify categories with concerning growth or high proportion
+            for category, data in expense_categories.items():
+                category_trend = calculate_trend([f['amount'] for f in data])
+                category_proportion = (data[-1]['amount'] / total_expenses) * 100
                 
-                if probability < 50:
-                    gap_amount = monthly_required - average_savings
+                if category_trend > 15:  # Fast growing categories
                     insights['recommendations'].append({
-                        'category': 'Goals',
-                        'priority': 'High' if probability < 30 else 'Medium',
-                        'action': f"Increase monthly savings by ${gap_amount:.2f} to stay on track for {goal['name']}.",
-                        'impact': "Critical for goal achievement"
+                        'category': 'Budget',
+                        'priority': 'High' if category_proportion > 20 else 'Medium',
+                        'action': f"Your {category} expenses are growing rapidly (+{category_trend:.1f}%). Review and set a budget cap.",
+                        'impact': f"Controls {category_proportion:.1f}% of total expenses"
+                    })
+                
+                if category_proportion > 30:  # Large expense categories
+                    insights['recommendations'].append({
+                        'category': 'Expense Optimization',
+                        'priority': 'High',
+                        'action': f"Your {category} expenses represent {category_proportion:.1f}% of total spending. Research alternatives or negotiate better rates.",
+                        'impact': f"Potential for significant monthly savings"
                     })
 
-        # Identify opportunity areas
+        # Enhanced goal achievement analysis
+        for goal in goal_projections:
+            probability = goal['probability']
+            monthly_required = goal['monthly_required']
+            
+            if probability < 50:
+                gap_amount = monthly_required - average_savings
+                shortfall_months = calculate_shortfall_months(gap_amount, savings_forecast)
+                
+                insights['recommendations'].append({
+                    'category': 'Goals',
+                    'priority': 'High' if probability < 30 else 'Medium',
+                    'action': f"Increase monthly savings by ${gap_amount:.2f} to stay on track for {goal['name']}.",
+                    'impact': f"Goal at risk without adjustment for {shortfall_months} months"
+                })
+
+        # Enhanced opportunity identification
         if savings_rate > 20:
+            potential_investment = (savings_rate - 20) * average_income / 100
             insights['opportunity_areas'].append({
                 'category': 'Investment',
-                'description': "Consider diversifying investments with excess savings",
-                'potential_impact': "Long-term wealth building"
+                'description': f"${potential_investment:.2f} monthly available for additional investments",
+                'potential_impact': "Long-term wealth building through diversified investments"
             })
         
-        if any(cat['amount'] > average_expenses * 0.3 for cat in find_top_categories(category_forecasts['expense'])):
+        if expense_trend > 0 and any(cat['amount'] > average_expenses * 0.3 for cat in find_top_categories(category_forecasts['expense'])):
             insights['opportunity_areas'].append({
                 'category': 'Cost Optimization',
-                'description': "Large expense categories identified - potential for significant savings",
-                'potential_impact': "Immediate improvement in savings rate"
+                'description': "Large expense categories identified with growth trend",
+                'potential_impact': f"Potential ${(average_expenses * 0.1):.2f} monthly savings through optimization"
+            })
+
+        # Add income growth opportunities if income is stagnant or declining
+        if income_trend <= 2:
+            insights['opportunity_areas'].append({
+                'category': 'Income Growth',
+                'description': "Explore additional income streams or career development",
+                'potential_impact': "Increase financial stability and accelerate goal achievement"
             })
 
         # Sort recommendations by priority
@@ -118,6 +178,11 @@ def generate_insights_and_recommendations(forecast_data: dict) -> dict:
 
     return insights
 
+def calculate_shortfall_months(gap_amount: float, savings_forecast: list) -> int:
+    """Calculate number of months where savings fall short of required amount"""
+    return sum(1 for month in savings_forecast if month['amount'] < gap_amount)
+
+# Existing helper functions remain unchanged
 def calculate_trend(values: list) -> float:
     """Calculate the trend (percentage change) in a series of values"""
     if not values or len(values) < 2:
