@@ -12,7 +12,9 @@ router = APIRouter()
 def generate_insights_and_recommendations(forecast_data: dict) -> dict:
     insights = {
         'forecast_insight': None,
-        'recommendations': []
+        'recommendations': [],
+        'risk_level': None,
+        'opportunity_areas': []
     }
     
     try:
@@ -23,74 +25,128 @@ def generate_insights_and_recommendations(forecast_data: dict) -> dict:
         category_forecasts = forecast_data['category_forecasts']
         goal_projections = forecast_data['goal_projections']
 
-        # Calculate averages
+        # Calculate key metrics
+        income_trend = calculate_trend([f['amount'] for f in income_forecast])
+        expense_trend = calculate_trend([f['amount'] for f in expense_forecast])
+        savings_trend = calculate_trend([f['amount'] for f in savings_forecast])
+        
         average_income = sum(f['amount'] for f in income_forecast) / len(income_forecast)
         average_expenses = sum(f['amount'] for f in expense_forecast) / len(expense_forecast)
         average_savings = sum(f['amount'] for f in savings_forecast) / len(savings_forecast)
+        savings_rate = (average_savings / average_income) * 100 if average_income > 0 else 0
 
-        # Generate main insight based on financial health
+        # Assess financial health and set risk level
         if average_income < average_expenses:
-            insights['forecast_insight'] = "Warning: Your projected expenses are higher than your income."
-            insights['recommendations'].append("Consider reducing expenses or finding additional income sources.")
-        elif average_savings < 0:
-            insights['forecast_insight'] = "Critical: Your forecast shows negative savings."
-            insights['recommendations'].append("Urgently review and cut non-essential expenses.")
-            insights['recommendations'].append("Explore ways to increase your income.")
+            insights['risk_level'] = 'High'
+            insights['forecast_insight'] = "Critical: Your projected expenses exceed income, indicating significant financial stress."
+        elif savings_rate < 10:
+            insights['risk_level'] = 'Medium'
+            insights['forecast_insight'] = f"Caution: Your savings rate of {savings_rate:.1f}% is below recommended levels."
         else:
-            insights['forecast_insight'] = "Good Outlook: Your income is projected to cover expenses with potential savings."
+            insights['risk_level'] = 'Low'
+            insights['forecast_insight'] = f"Positive: Your forecast shows a healthy savings rate of {savings_rate:.1f}%."
 
-        # Goal-based recommendations
+        # Analyze trends and provide context
+        if income_trend < 0:
+            insights['recommendations'].append({
+                'category': 'Income',
+                'priority': 'High',
+                'action': "Your income is trending downward. Consider diversifying income sources or exploring career development opportunities.",
+                'impact': "Critical for financial stability"
+            })
+        
+        if expense_trend > income_trend:
+            insights['recommendations'].append({
+                'category': 'Expenses',
+                'priority': 'High',
+                'action': "Your expenses are growing faster than income. Review and optimize your monthly expenses.",
+                'impact': "Essential for maintaining financial balance"
+            })
+
+        # Category-specific analysis
+        if 'expense' in category_forecasts:
+            high_growth_categories = find_high_growth_categories(category_forecasts['expense'])
+            for category, growth in high_growth_categories:
+                insights['recommendations'].append({
+                    'category': 'Budget',
+                    'priority': 'Medium',
+                    'action': f"Your {category} expenses show {growth:.1f}% projected growth. Consider setting a budget cap.",
+                    'impact': "Important for expense management"
+                })
+
+        # Goal achievement analysis
         if goal_projections:
             for goal in goal_projections:
                 probability = goal['probability']
+                monthly_required = goal['monthly_required']
+                
                 if probability < 50:
-                    insights['recommendations'].append(
-                        f"Goal Alert: {goal['name']} has low probability of completion. Consider adjusting your savings strategy."
-                    )
+                    gap_amount = monthly_required - average_savings
+                    insights['recommendations'].append({
+                        'category': 'Goals',
+                        'priority': 'High' if probability < 30 else 'Medium',
+                        'action': f"Increase monthly savings by ${gap_amount:.2f} to stay on track for {goal['name']}.",
+                        'impact': "Critical for goal achievement"
+                    })
 
-        # Expense category analysis
-        if 'expense' in category_forecasts:
-            top_expense = find_top_category(category_forecasts['expense'])
-            if top_expense:
-                insights['recommendations'].append(
-                    f"Top Expense Category: Focus on reducing {top_expense['category']} expenses."
-                )
+        # Identify opportunity areas
+        if savings_rate > 20:
+            insights['opportunity_areas'].append({
+                'category': 'Investment',
+                'description': "Consider diversifying investments with excess savings",
+                'potential_impact': "Long-term wealth building"
+            })
+        
+        if any(cat['amount'] > average_expenses * 0.3 for cat in find_top_categories(category_forecasts['expense'])):
+            insights['opportunity_areas'].append({
+                'category': 'Cost Optimization',
+                'description': "Large expense categories identified - potential for significant savings",
+                'potential_impact': "Immediate improvement in savings rate"
+            })
 
-        # Savings rate analysis
-        savings_rate = (average_savings / average_income) * 100 if average_income > 0 else 0
-        if savings_rate < 10:
-            insights['recommendations'].append(
-                "Savings Tip: Aim to increase your savings rate. Currently, you're saving less than 10% of income."
-            )
-        elif savings_rate >= 10 and savings_rate < 20:
-            insights['recommendations'].append(
-                "Savings Progress: Good job! You're saving between 10-20% of your income."
-            )
-        else:
-            insights['recommendations'].append(
-                "Savings Champion: Excellent! You're saving over 20% of your income."
-            )
+        # Sort recommendations by priority
+        insights['recommendations'].sort(key=lambda x: {'High': 0, 'Medium': 1, 'Low': 2}[x['priority']])
 
     except Exception as e:
         insights['forecast_insight'] = "Unable to generate detailed insights at this time."
-        insights['recommendations'].append("Please ensure your financial data is up to date.")
+        insights['recommendations'].append({
+            'category': 'System',
+            'priority': 'High',
+            'action': "Please ensure your financial data is up to date and try again.",
+            'impact': "Required for accurate analysis"
+        })
 
     return insights
 
-def find_top_category(categories: dict) -> dict:
+def calculate_trend(values: list) -> float:
+    """Calculate the trend (percentage change) in a series of values"""
+    if not values or len(values) < 2:
+        return 0.0
+    total_change = ((values[-1] - values[0]) / values[0]) * 100
+    return total_change
+
+def find_high_growth_categories(categories: dict, threshold: float = 10.0) -> list:
+    """Identify categories with growth rate above threshold"""
+    high_growth = []
+    for category, data in categories.items():
+        if len(data) >= 2:
+            growth = calculate_trend([f['amount'] for f in data])
+            if growth > threshold:
+                high_growth.append((category, growth))
+    return high_growth
+
+def find_top_categories(categories: dict, top_n: int = 3) -> list:
+    """Find the top N categories by amount"""
     if not categories:
-        return None
+        return []
     
-    # Find category with highest amount in the latest forecast
-    top_category = max(
-        categories.items(),
-        key=lambda x: x[1][-1]['amount'] if x[1] else 0
-    )
+    category_totals = []
+    for category, data in categories.items():
+        if data:
+            total = sum(f['amount'] for f in data)
+            category_totals.append({'category': category, 'amount': total})
     
-    return {
-        'category': top_category[0],
-        'amount': top_category[1][-1]['amount'] if top_category[1] else 0
-    }
+    return sorted(category_totals, key=lambda x: x['amount'], reverse=True)[:top_n]
 
 
 @router.get("/financial-forecast")
