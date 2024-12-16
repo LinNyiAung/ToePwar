@@ -1,9 +1,75 @@
 class ApiConstants {
-  static const String baseUrl = 'http://192.168.1.10:800';
+  static const String baseUrl = 'http://192.168.1.7:800';
 
   // Add other API-related constants here
-  static const Map<String, List<String>> transactionCategories = {
-    'income': ['Salary', 'Business', 'Investment', 'Gift', 'Other'],
-    'expense': ['Shopping', 'Food', 'Transportation', 'Bills', 'Other'],
+  static final Map<String, Map<String, List<String>>> nestedTransactionCategories = {
+    'income': {
+      'Professional Income': [
+        'Salary',
+        'Freelance Work',
+        'Consulting',
+        'Bonus',
+        'Commission'
+      ],
+      'Passive Income': [
+        'Investment',
+        'Rental Income',
+        'Dividends',
+        'Interest'
+      ],
+      'Other Income': [
+        'Side Hustle',
+        'Gift',
+        'Refund',
+        'Inheritance'
+      ]
+    },
+    'expense': {
+      'Living Expenses': [
+        'Rent/Mortgage',
+        'Utilities',
+        'Groceries',
+        'Dining Out',
+        'Home Maintenance'
+      ],
+      'Transportation': [
+        'Fuel',
+        'Car Maintenance',
+        'Public Transit',
+        'Ride Sharing'
+      ],
+      'Personal': [
+        'Clothing',
+        'Healthcare',
+        'Fitness',
+        'Personal Care'
+      ],
+      'Entertainment': [
+        'Streaming Services',
+        'Movies/Concerts',
+        'Hobbies',
+        'Subscriptions'
+      ],
+      'Financial': [
+        'Taxes',
+        'Insurance',
+        'Debt Repayment',
+        'Bank Fees'
+      ],
+      'Education': [
+        'Courses',
+        'Books',
+        'Online Learning'
+      ],
+      'Gifts & Donations': [
+        'Gifts',
+        'Charity'
+      ],
+      'Miscellaneous': [
+        'Travel',
+        'Electronics',
+        'Other Expenses'
+      ]
+    }
   };
 }

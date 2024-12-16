@@ -24,7 +24,8 @@ class _EditTransactionViewState extends State<EditTransactionView> {
   late final TransactionController _transactionController;
   late final TextEditingController _amountController;
   late String _selectedType;
-  String? _selectedCategory;
+  String? _selectedMainCategory;
+  String? _selectedSubCategory;
   late DateTime _selectedDate;
   bool _isLoading = false;
 
@@ -35,13 +36,24 @@ class _EditTransactionViewState extends State<EditTransactionView> {
     _amountController = TextEditingController(
       text: widget.transaction.amount.toString(),
     );
+
     _selectedType = widget.transaction.type;
-    _selectedCategory = widget.transaction.category;
     _selectedDate = widget.transaction.date;
+
+    // Determine main and sub categories
+    final categoriesMap =
+    ApiConstants.nestedTransactionCategories[_selectedType]!;
+
+    // Find the main category that contains the current category
+    _selectedMainCategory = categoriesMap.keys.firstWhere(
+            (mainCategory) => categoriesMap[mainCategory]!.contains(widget.transaction.category),
+        orElse: () => categoriesMap.keys.first
+    );
+    _selectedSubCategory = widget.transaction.category;
   }
 
   Future<void> _updateTransaction() async {
-    if (_amountController.text.isEmpty || _selectedCategory == null) {
+    if (_amountController.text.isEmpty || _selectedSubCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all fields')),
       );
@@ -55,7 +67,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
         id: widget.transaction.id,
         type: _selectedType,
         amount: double.parse(_amountController.text),
-        category: _selectedCategory!,
+        category: _selectedSubCategory!, // Store the subcategory
         date: _selectedDate,
       );
       widget.onTransactionChanged();
@@ -83,6 +95,9 @@ class _EditTransactionViewState extends State<EditTransactionView> {
 
   @override
   Widget build(BuildContext context) {
+    final categoriesMap =
+    ApiConstants.nestedTransactionCategories[_selectedType]!;
+
     return Scaffold(
       appBar: AppBar(title: Text('Edit Transaction')),
       body: Padding(
@@ -102,8 +117,11 @@ class _EditTransactionViewState extends State<EditTransactionView> {
               onChanged: (value) {
                 setState(() {
                   _selectedType = value!;
-                  _selectedCategory =
-                      ApiConstants.transactionCategories[_selectedType]?.first;
+                  // Reset categories when type changes
+                  _selectedMainCategory =
+                      ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
+                  _selectedSubCategory =
+                      ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
                 });
               },
             ),
@@ -118,18 +136,44 @@ class _EditTransactionViewState extends State<EditTransactionView> {
             ),
             SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              value: _selectedMainCategory,
               decoration: InputDecoration(
-                labelText: 'Category',
+                labelText: 'Main Category',
                 border: OutlineInputBorder(),
               ),
-              items: ApiConstants.transactionCategories[_selectedType]!
-                  .map((category) {
-                return DropdownMenuItem(value: category, child: Text(category));
+              items: categoriesMap.keys.map((mainCategory) {
+                return DropdownMenuItem(
+                    value: mainCategory,
+                    child: Text(mainCategory)
+                );
               }).toList(),
               onChanged: (value) {
                 setState(() {
-                  _selectedCategory = value;
+                  _selectedMainCategory = value;
+                  // Reset subcategory to first in the new main category
+                  _selectedSubCategory =
+                      categoriesMap[_selectedMainCategory]!.first;
+                });
+              },
+            ),
+            SizedBox(height: 16),
+
+            // Subcategory Dropdown
+            DropdownButtonFormField<String>(
+              value: _selectedSubCategory,
+              decoration: InputDecoration(
+                labelText: 'Subcategory',
+                border: OutlineInputBorder(),
+              ),
+              items: categoriesMap[_selectedMainCategory]!.map((subCategory) {
+                return DropdownMenuItem(
+                    value: subCategory,
+                    child: Text(subCategory)
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedSubCategory = value;
                 });
               },
             ),

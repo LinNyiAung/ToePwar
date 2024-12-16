@@ -16,19 +16,23 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   late final TransactionController _transactionController;
   final _amountController = TextEditingController();
   String _selectedType = 'income';
-  String? _selectedCategory;
+  String? _selectedMainCategory;
+  String? _selectedSubCategory;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _transactionController = TransactionController(token: widget.token);
-    _selectedCategory =
-        ApiConstants.transactionCategories[_selectedType]?.first;
+    _selectedMainCategory =
+        ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
+    _selectedSubCategory =
+        ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
   }
 
   Future<void> _addTransaction() async {
-    if (_amountController.text.isEmpty || _selectedCategory == null) {
+    if (_amountController.text.isEmpty ||
+        _selectedSubCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all fields')),
       );
@@ -41,7 +45,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
       await _transactionController.addTransaction(
         type: _selectedType,
         amount: double.parse(_amountController.text),
-        category: _selectedCategory!,
+        category: _selectedSubCategory!, // Store the subcategory
       );
       widget.onTransactionChanged();
       Navigator.pop(context, true);
@@ -54,8 +58,12 @@ class _AddTransactionViewState extends State<AddTransactionView> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final categoriesMap =
+    ApiConstants.nestedTransactionCategories[_selectedType]!;
+
     return Scaffold(
       appBar: AppBar(title: Text('Add Transaction')),
       body: Padding(
@@ -75,8 +83,11 @@ class _AddTransactionViewState extends State<AddTransactionView> {
               onChanged: (value) {
                 setState(() {
                   _selectedType = value!;
-                  _selectedCategory =
-                      ApiConstants.transactionCategories[_selectedType]?.first;
+                  // Reset categories when type changes
+                  _selectedMainCategory =
+                      ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
+                  _selectedSubCategory =
+                      ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
                 });
               },
             ),
@@ -91,18 +102,44 @@ class _AddTransactionViewState extends State<AddTransactionView> {
             ),
             SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              value: _selectedMainCategory,
               decoration: InputDecoration(
-                labelText: 'Category',
+                labelText: 'Main Category',
                 border: OutlineInputBorder(),
               ),
-              items: ApiConstants.transactionCategories[_selectedType]!
-                  .map((category) {
-                return DropdownMenuItem(value: category, child: Text(category));
+              items: categoriesMap.keys.map((mainCategory) {
+                return DropdownMenuItem(
+                    value: mainCategory,
+                    child: Text(mainCategory)
+                );
               }).toList(),
               onChanged: (value) {
                 setState(() {
-                  _selectedCategory = value;
+                  _selectedMainCategory = value;
+                  // Reset subcategory to first in the new main category
+                  _selectedSubCategory =
+                      categoriesMap[_selectedMainCategory]!.first;
+                });
+              },
+            ),
+            SizedBox(height: 16),
+
+            // Subcategory Dropdown
+            DropdownButtonFormField<String>(
+              value: _selectedSubCategory,
+              decoration: InputDecoration(
+                labelText: 'Subcategory',
+                border: OutlineInputBorder(),
+              ),
+              items: categoriesMap[_selectedMainCategory]!.map((subCategory) {
+                return DropdownMenuItem(
+                    value: subCategory,
+                    child: Text(subCategory)
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedSubCategory = value;
                 });
               },
             ),
