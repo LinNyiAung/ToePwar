@@ -1,3 +1,4 @@
+from calendar import monthrange
 from database import transactions_collection
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -34,13 +35,22 @@ class AIBudgetService:
         )
 
         # Calculate start and end dates based on period type
-        start_date = datetime.utcnow()
+        today = datetime.utcnow()
+        
         if period_type == 'daily':
+            start_date = today
             end_date = start_date + timedelta(days=1)
         elif period_type == 'monthly':
-            end_date = start_date + timedelta(days=30)
+            # Start from first day of current month
+            start_date = datetime(today.year, today.month, 1)
+            # End on last day of current month
+            _, last_day = monthrange(today.year, today.month)
+            end_date = datetime(today.year, today.month, last_day, 23, 59, 59)
         else:  # yearly
-            end_date = start_date + timedelta(days=365)
+            # Start from first day of current year
+            start_date = datetime(today.year, 1, 1)
+            # End on last day of current year
+            end_date = datetime(today.year, 12, 31, 23, 59, 59)
         
         return BudgetPlan(
             user_id=self.user_id,
