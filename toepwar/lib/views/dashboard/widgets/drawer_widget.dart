@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toepwar/views/ai/budget_plan_view.dart';
 import 'package:toepwar/views/auth/login_view.dart';
 import 'package:toepwar/views/charts/income_structure_view.dart';
 import 'package:toepwar/views/dashboard/dashboard_view.dart';
@@ -6,7 +7,7 @@ import 'package:toepwar/views/profile/profile_view.dart'; // Import profile view
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../utils/api_constants.dart';
-import '../../ai/financial-forecast-view.dart';
+import '../../ai/financial_forecast_view.dart';
 import '../../charts/expense_structure_view.dart';
 import '../../goals/goals_view.dart';
 import '../../reports/financial_report_view.dart';
@@ -195,6 +196,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => FinancialForecastView(token: widget.token),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.book),
+            title: Text('AI Budget Plan'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BudgetPlanView(token: widget.token),
                 ),
               );
             },

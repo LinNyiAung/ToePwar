@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'http://192.168.1.7:800';
+  static const String baseUrl = 'http://192.168.1.8:800';
 
   // Add other API-related constants here
   static final Map<String, Map<String, List<String>>> nestedTransactionCategories = {
@@ -7,7 +7,6 @@ class ApiConstants {
       'Professional Income': [
         'Salary',
         'Freelance Work',
-        'Consulting',
         'Bonus',
         'Commission'
       ],
@@ -18,7 +17,6 @@ class ApiConstants {
         'Interest'
       ],
       'Other Income': [
-        'Side Hustle',
         'Gift',
         'Refund',
         'Inheritance'
@@ -36,7 +34,7 @@ class ApiConstants {
         'Fuel',
         'Car Maintenance',
         'Public Transit',
-        'Ride Sharing'
+        'Taxi'
       ],
       'Personal': [
         'Clothing',

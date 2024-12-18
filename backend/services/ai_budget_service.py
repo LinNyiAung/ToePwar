@@ -1,0 +1,199 @@
+from database import transactions_collection
+from datetime import datetime, timedelta
+from typing import Dict, List
+import statistics
+
+from models.budget_plan_model import BudgetPlan
+
+class AIBudgetService:
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+
+    def generate_budget_plan(self, period_type: str = 'monthly') -> BudgetPlan:
+        # Get historical transaction data
+        transactions = self._get_historical_transactions(period_type)
+        
+        # Analyze spending patterns
+        spending_patterns = self._analyze_spending_patterns(transactions, period_type)
+        
+        # Calculate total income and regular expenses based on period
+        period_income = self._calculate_period_income(transactions, period_type)
+        
+        # Generate category-wise budget allocations
+        category_budgets = self._generate_category_budgets(
+            spending_patterns, 
+            period_income,
+            period_type
+        )
+        
+        # Generate recommendations
+        recommendations = self._generate_recommendations(
+            spending_patterns, 
+            category_budgets,
+            period_type
+        )
+
+        # Calculate start and end dates based on period type
+        start_date = datetime.utcnow()
+        if period_type == 'daily':
+            end_date = start_date + timedelta(days=1)
+        elif period_type == 'monthly':
+            end_date = start_date + timedelta(days=30)
+        else:  # yearly
+            end_date = start_date + timedelta(days=365)
+        
+        return BudgetPlan(
+            user_id=self.user_id,
+            period_type=period_type,
+            start_date=start_date,
+            end_date=end_date,
+            total_budget=period_income * 0.9,  # Reserve 10% for savings
+            category_budgets=category_budgets,
+            recommendations=recommendations,
+            savings_target=period_income * 0.1
+        )
+
+    def _get_historical_transactions(self, period_type: str) -> List[Dict]:
+        # Adjust analysis period based on budget period type
+        if period_type == 'daily':
+            months = 1  # Look at last month for daily patterns
+        elif period_type == 'monthly':
+            months = 3  # Look at last 3 months
+        else:  # yearly
+            months = 12  # Look at last year
+
+        start_date = datetime.utcnow() - timedelta(days=30 * months)
+        return list(transactions_collection.find({
+            "user_id": self.user_id,
+            "date": {"$gte": start_date}
+        }))
+    
+
+    def _calculate_period_income(self, transactions: List[Dict], period_type: str) -> float:
+        monthly_income = self._calculate_monthly_income(transactions)
+        
+        # Convert monthly income to requested period
+        if period_type == 'daily':
+            return monthly_income / 30
+        elif period_type == 'monthly':
+            return monthly_income
+        else:  # yearly
+            return monthly_income * 12
+
+    def _analyze_spending_patterns(self, transactions: List[Dict], period_type: str) -> Dict:
+        patterns = {}
+        for transaction in transactions:
+            if transaction["type"] == "expense":
+                category = transaction["category"]
+                if category not in patterns:
+                    patterns[category] = []
+                patterns[category].append(transaction["amount"])
+        
+        # Calculate statistics for each category
+        analysis = {}
+        for category, amounts in patterns.items():
+            # Adjust statistics based on period type
+            divisor = self._get_period_divisor(len(amounts), period_type)
+            
+            analysis[category] = {
+                "average": statistics.mean(amounts) / divisor,
+                "median": statistics.median(amounts) / divisor,
+                "max": max(amounts),
+                "min": min(amounts),
+                "total": sum(amounts),
+                "frequency": len(amounts)
+            }
+        return analysis
+    
+    def _get_period_divisor(self, num_transactions: int, period_type: str) -> float:
+        """Helper method to calculate the appropriate divisor for different periods"""
+        if period_type == 'daily':
+            return 30  # Convert monthly average to daily
+        elif period_type == 'monthly':
+            return 1  # Keep as monthly
+        else:  # yearly
+            return 1/12  # Convert monthly to yearly
+
+    def _calculate_monthly_income(self, transactions: List[Dict]) -> float:
+        monthly_incomes = []
+        current_month = None
+        month_total = 0
+
+        for transaction in sorted(transactions, key=lambda x: x["date"]):
+            if transaction["type"] == "income":
+                transaction_month = transaction["date"].strftime("%Y-%m")
+                
+                if current_month is None:
+                    current_month = transaction_month
+                
+                if transaction_month != current_month:
+                    monthly_incomes.append(month_total)
+                    month_total = transaction["amount"]
+                    current_month = transaction_month
+                else:
+                    month_total += transaction["amount"]
+        
+        if month_total > 0:
+            monthly_incomes.append(month_total)
+        
+        return statistics.mean(monthly_incomes) if monthly_incomes else 0
+
+
+    def _generate_category_budgets(
+        self, 
+        spending_patterns: Dict, 
+        period_income: float,
+        period_type: str
+    ) -> Dict[str, float]:
+        # Calculate total expenses for the period
+        divisor = self._get_period_divisor(1, period_type)
+        
+        total_expenses = sum(
+            pattern["total"] * divisor
+            for pattern in spending_patterns.values()
+        )
+        
+        # Adjust budgets based on income and historical spending
+        budgets = {}
+        for category, pattern in spending_patterns.items():
+            period_avg = pattern["total"] * divisor
+            proportion = period_avg / total_expenses if total_expenses > 0 else 0
+            
+            # Allocate budget while ensuring it doesn't exceed income
+            suggested_budget = period_income * 0.9 * proportion  # Reserve 10% for savings
+            
+            # Round to 2 decimal places
+            budgets[category] = round(suggested_budget, 2)
+        
+        return budgets
+
+    def _generate_recommendations(
+        self, 
+        spending_patterns: Dict, 
+        category_budgets: Dict[str, float],
+        period_type: str
+    ) -> List[str]:
+        recommendations = []
+        period_text = 'daily' if period_type == 'daily' else 'monthly' if period_type == 'monthly' else 'yearly'
+        divisor = self._get_period_divisor(1, period_type)
+        
+        # Analyze each category
+        for category, pattern in spending_patterns.items():
+            avg = pattern["total"] * divisor  # Convert to period average
+            budget = category_budgets[category]
+            
+            if avg > budget:
+                reduction = avg - budget
+                percentage = (reduction / avg) * 100
+                recommendations.append(
+                    f"Consider reducing {period_text} {category} expenses by "
+                    f"${reduction:.2f} ({percentage:.1f}%)"
+                )
+            
+            if pattern["max"] > budget * 1.5:
+                recommendations.append(
+                    f"Large irregular expenses detected in {category}. "
+                    f"Consider setting aside a {period_text} buffer for unexpected costs."
+                )
+        
+        return recommendations
