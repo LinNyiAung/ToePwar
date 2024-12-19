@@ -157,30 +157,31 @@ class AIBudgetService:
         period_income: float,
         period_type: str
     ) -> Dict[str, float]:
-        # Updated category priorities based on common financial advice (50/30/20 rule)
-        # 50% for needs, 30% for wants, 20% for savings/debt
+        # Updated category priorities based on Myanmar living expenses
+        # Modified from 50/30/20 to 60/25/15 rule to account for higher essential expenses
         category_priorities = {
-            # Needs (Essential) - Target: 50% of income
-            "Rent/Mortgage": {"priority": 1, "min_percent": 25, "max_percent": 35, "category_type": "needs"},
-            "Utilities": {"priority": 1, "min_percent": 5, "max_percent": 8, "category_type": "needs"},
-            "Groceries": {"priority": 1, "min_percent": 8, "max_percent": 12, "category_type": "needs"},
-            "Healthcare": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "needs"},
-            "Insurance": {"priority": 1, "min_percent": 4, "max_percent": 8, "category_type": "needs"},
-            "Transportation": {"priority": 1, "min_percent": 5, "max_percent": 15, "category_type": "needs"},
+            # Needs (Essential) - Target: 60% of income
+            "Food/Groceries": {"priority": 1, "min_percent": 20, "max_percent": 30, "category_type": "needs"},  # Higher food allocation
+            "Rent/Housing": {"priority": 1, "min_percent": 15, "max_percent": 25, "category_type": "needs"},
+            "Transportation": {"priority": 1, "min_percent": 8, "max_percent": 12, "category_type": "needs"},  # Account for fuel costs
+            "Utilities": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "needs"},  # Electricity, water
+            "Healthcare": {"priority": 1, "min_percent": 5, "max_percent": 8, "category_type": "needs"},
+            "Education": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "needs"},  # High priority in Myanmar
             
-            # Wants (Lifestyle) - Target: 30% of income
-            "Dining Out": {"priority": 2, "min_percent": 3, "max_percent": 7, "category_type": "wants"},
-            "Entertainment": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},
-            "Shopping": {"priority": 2, "min_percent": 2, "max_percent": 6, "category_type": "wants"},
-            "Hobbies": {"priority": 2, "min_percent": 1, "max_percent": 4, "category_type": "wants"},
-            "Fitness": {"priority": 2, "min_percent": 1, "max_percent": 3, "category_type": "wants"},
-            "Travel": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},
+            # Wants (Lifestyle) - Target: 25% of income
+            "Dining Out": {"priority": 2, "min_percent": 3, "max_percent": 6, "category_type": "wants"},
+            "Shopping": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},
+            "Entertainment": {"priority": 2, "min_percent": 2, "max_percent": 4, "category_type": "wants"},
+            "Personal Care": {"priority": 2, "min_percent": 2, "max_percent": 4, "category_type": "wants"},
+            "Donations/Charity": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},  # Important in Myanmar culture
+            "Family Support": {"priority": 2, "min_percent": 3, "max_percent": 6, "category_type": "wants"},  # Cultural obligation
             
-            # Savings/Debt (Financial Goals) - Target: 20% of income
-            "Emergency Fund": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "savings"},
-            "Retirement": {"priority": 1, "min_percent": 5, "max_percent": 15, "category_type": "savings"},
-            "Debt Repayment": {"priority": 1, "min_percent": 5, "max_percent": 20, "category_type": "savings"},
-            "Investment": {"priority": 2, "min_percent": 2, "max_percent": 10, "category_type": "savings"},
+            # Savings/Investment - Target: 15% of income
+            "Emergency Fund": {"priority": 1, "min_percent": 5, "max_percent": 8, "category_type": "savings"},
+            "Gold/Jewelry": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "savings"},  # Common saving method
+            "Business Investment": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "savings"},
+            "Insurance": {"priority": 2, "min_percent": 1, "max_percent": 3, "category_type": "savings"},
+            "Digital Assets": {"priority": 2, "min_percent": 1, "max_percent": 3, "category_type": "savings"},  # Growing trend
         }
         
         # Calculate the divisor for period adjustment
@@ -206,15 +207,15 @@ class AIBudgetService:
                     "priority": 2,
                     "min_percent": 1,
                     "max_percent": 5,
-                    "category_type": "wants"  # Default uncategorized to wants
+                    "category_type": "wants"
                 })
             }
         
-        # Second pass: Allocate budgets based on 50/30/20 rule
+        # Second pass: Allocate budgets based on 60/25/15 rule (Myanmar adjusted)
         target_allocations = {
-            "needs": 0.5 * period_income,
-            "wants": 0.3 * period_income,
-            "savings": 0.2 * period_income
+            "needs": 0.6 * period_income,  # Increased to 60%
+            "wants": 0.25 * period_income, # Reduced to 25%
+            "savings": 0.15 * period_income # Reduced to 15%
         }
         
         # Sort categories by priority and historical spending
@@ -222,7 +223,7 @@ class AIBudgetService:
             spending_analysis.items(),
             key=lambda x: (
                 x[1]["settings"]["priority"],
-                -x[1]["avg_spend"]  # Higher spending gets priority
+                -x[1]["avg_spend"]
             )
         )
         
@@ -231,15 +232,13 @@ class AIBudgetService:
             settings = analysis["settings"]
             category_type = settings["category_type"]
             
-            # Calculate suggested budget based on historical spending and limits
             min_amount = (period_income * settings["min_percent"]) / 100
             max_amount = (period_income * settings["max_percent"]) / 100
             
-            # Consider historical spending in budget calculation
             if analysis["avg_spend"] > 0:
-                # Use weighted average of historical spending and recommended range
-                historical_weight = 0.7
-                recommended_weight = 0.3
+                # Adjust weights to favor historical spending more in Myanmar context
+                historical_weight = 0.8  # Increased from 0.7
+                recommended_weight = 0.2  # Decreased from 0.3
                 
                 recommended_amount = (min_amount + max_amount) / 2
                 suggested_budget = (
@@ -247,46 +246,39 @@ class AIBudgetService:
                     recommended_amount * recommended_weight
                 )
                 
-                # Ensure within min-max bounds
                 suggested_budget = max(min_amount, min(suggested_budget, max_amount))
             else:
-                # No history - use recommended minimum
                 suggested_budget = min_amount
             
-            # Adjust for remaining allocation in category type
             remaining_type_allocation = target_allocations[category_type] - category_totals[category_type]
             suggested_budget = min(suggested_budget, remaining_type_allocation)
-            
-            # Ensure we don't exceed remaining total income
             suggested_budget = min(suggested_budget, remaining_income)
             
-            # Update trackers
             budgets[category] = round(suggested_budget, 2)
             remaining_income -= suggested_budget
             category_totals[category_type] += suggested_budget
         
-        # Final pass: Adjust for seasonal variations
+        # Final pass: Adjust for Myanmar seasonal variations
         current_month = datetime.utcnow().month
         seasonal_adjustments = {
-            # Winter months
-            12: {"Utilities": 1.2, "Entertainment": 1.1},  # December
-            1: {"Utilities": 1.2, "Clothing": 0.8},        # January
-            2: {"Utilities": 1.1},                         # February
+            # Rainy Season (June to October)
+            6: {"Transportation": 1.2, "Healthcare": 1.1},  # Increased transport costs
+            7: {"Transportation": 1.2, "Healthcare": 1.1},
+            8: {"Transportation": 1.2, "Healthcare": 1.1},
+            9: {"Transportation": 1.2, "Healthcare": 1.1},
+            10: {"Transportation": 1.2, "Healthcare": 1.1},
             
-            # Spring months
-            3: {"Home Maintenance": 1.1},                  # March
-            4: {"Shopping": 1.1},                          # April
-            5: {"Travel": 1.2},                            # May
+            # Festival Season (October to November)
+            10: {"Donations/Charity": 1.3, "Shopping": 1.2},  # Thadingyut
+            11: {"Donations/Charity": 1.3, "Shopping": 1.2},  # Tazaungdaing
             
-            # Summer months
-            6: {"Travel": 1.3, "Entertainment": 1.2},      # June
-            7: {"Travel": 1.3, "Entertainment": 1.2},      # July
-            8: {"Shopping": 1.2},                          # August
+            # Hot Season (March to May)
+            3: {"Utilities": 1.2},  # Higher electricity for cooling
+            4: {"Utilities": 1.3, "Healthcare": 1.1},
+            5: {"Utilities": 1.3, "Healthcare": 1.1},
             
-            # Fall months
-            9: {"Shopping": 1.1, "Education": 1.2},        # September
-            10: {"Home Maintenance": 1.1},                 # October
-            11: {"Shopping": 1.2}                          # November
+            # Myanmar New Year (April)
+            4: {"Donations/Charity": 1.4, "Shopping": 1.3},  # Thingyan adjustments
         }
         
         # Apply seasonal adjustments
@@ -298,16 +290,14 @@ class AIBudgetService:
                         remaining_income -= (adjusted_budget - budgets[category])
                         budgets[category] = round(adjusted_budget, 2)
         
-        # Distribute any remaining income proportionally to savings categories
+        # Distribute remaining income to emergency fund and gold/jewelry
         if remaining_income > 0:
-            savings_categories = [
-                cat for cat in budgets.keys() 
-                if category_priorities.get(cat, {}).get("category_type") == "savings"
-            ]
+            priority_savings = ["Emergency Fund", "Gold/Jewelry"]
+            available_savings = [cat for cat in priority_savings if cat in budgets]
             
-            if savings_categories:
-                extra_per_category = remaining_income / len(savings_categories)
-                for category in savings_categories:
+            if available_savings:
+                extra_per_category = remaining_income / len(available_savings)
+                for category in available_savings:
                     budgets[category] = round(budgets[category] + extra_per_category, 2)
         
         return budgets
