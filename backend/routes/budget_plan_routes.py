@@ -4,7 +4,11 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 import statistics
 
+from fastapi import APIRouter, Depends, Query
 from models.budget_plan_model import BudgetPlan
+from utils import get_current_user
+
+router = APIRouter()
 
 class AIBudgetService:
     def __init__(self, user_id: str):
@@ -78,7 +82,6 @@ class AIBudgetService:
             "date": {"$gte": start_date}
         }))
     
-
     def _calculate_period_income(self, transactions: List[Dict], period_type: str) -> float:
         monthly_income = self._calculate_monthly_income(transactions)
         
@@ -148,32 +151,121 @@ class AIBudgetService:
         
         return statistics.mean(monthly_incomes) if monthly_incomes else 0
 
-
     def _generate_category_budgets(
         self, 
         spending_patterns: Dict, 
         period_income: float,
         period_type: str
     ) -> Dict[str, float]:
-        # Calculate total expenses for the period
+        # Define base priorities for any category that might appear
+        category_priorities = {
+            # Essential needs
+            "Rent/Mortgage": {"priority": 1, "min_percent": 25, "max_percent": 35},
+            "Utilities": {"priority": 1, "min_percent": 5, "max_percent": 10},
+            "Groceries": {"priority": 1, "min_percent": 10, "max_percent": 15},
+            "Healthcare": {"priority": 1, "min_percent": 5, "max_percent": 10},
+            "Insurance": {"priority": 1, "min_percent": 5, "max_percent": 10},
+            "Taxes": {"priority": 1, "min_percent": 15, "max_percent": 30},
+            
+            # Transportation
+            "Transportation": {"priority": 2, "min_percent": 2, "max_percent": 5},
+            "Fuel": {"priority": 2, "min_percent": 3, "max_percent": 5},
+            "Car Maintenance": {"priority": 2, "min_percent": 2, "max_percent": 4},
+            "Public Transit": {"priority": 2, "min_percent": 2, "max_percent": 5},
+            "Taxi": {"priority": 2, "min_percent": 1, "max_percent": 3},
+            
+            # Financial goals
+            "Debt Repayment": {"priority": 1, "min_percent": 10, "max_percent": 20},
+            "Bank Fees": {"priority": 2, "min_percent": 0, "max_percent": 1},
+            
+            # Personal development
+            "Courses": {"priority": 3, "min_percent": 1, "max_percent": 3},
+            "Books": {"priority": 3, "min_percent": 1, "max_percent": 2},
+            "Online Learning": {"priority": 3, "min_percent": 1, "max_percent": 3},
+            
+            # Discretionary spending
+            "Dining Out": {"priority": 3, "min_percent": 5, "max_percent": 8},
+            "Home Maintenance": {"priority": 2, "min_percent": 2, "max_percent": 5},
+            "Clothing": {"priority": 3, "min_percent": 2, "max_percent": 5},
+            "Fitness": {"priority": 3, "min_percent": 1, "max_percent": 3},
+            "Personal Care": {"priority": 3, "min_percent": 2, "max_percent": 4},
+            "Streaming Services": {"priority": 4, "min_percent": 1, "max_percent": 2},
+            "Movies/Concerts": {"priority": 4, "min_percent": 1, "max_percent": 3},
+            "Hobbies": {"priority": 4, "min_percent": 1, "max_percent": 3},
+            "Subscriptions": {"priority": 4, "min_percent": 1, "max_percent": 2},
+            "Gifts": {"priority": 3, "min_percent": 1, "max_percent": 3},
+            "Charity": {"priority": 3, "min_percent": 1, "max_percent": 5},
+            "Travel": {"priority": 4, "min_percent": 2, "max_percent": 8},
+            "Electronics": {"priority": 4, "min_percent": 1, "max_percent": 4},
+            "Other Expenses": {"priority": 4, "min_percent": 1, "max_percent": 5}
+        }
+        
+        # Calculate the divisor for period adjustment
         divisor = self._get_period_divisor(1, period_type)
         
-        total_expenses = sum(
-            pattern["total"] * divisor
-            for pattern in spending_patterns.values()
-        )
-        
-        # Adjust budgets based on income and historical spending
+        # Initialize budgets dictionary
         budgets = {}
+        remaining_income = period_income * 0.9  # Reserve 10% for savings
+        
+        # Only process categories that exist in spending patterns
+        active_categories = {}
+        total_spending = 0
+        
         for category, pattern in spending_patterns.items():
-            period_avg = pattern["total"] * divisor
-            proportion = period_avg / total_expenses if total_expenses > 0 else 0
+            avg_spend = pattern["total"] * divisor
+            total_spending += avg_spend
             
-            # Allocate budget while ensuring it doesn't exceed income
-            suggested_budget = period_income * 0.9 * proportion  # Reserve 10% for savings
+            # Use default priority settings if available, otherwise set as lowest priority
+            priority_settings = category_priorities.get(category, {
+                "priority": 4,
+                "min_percent": 1,
+                "max_percent": 5
+            })
             
-            # Round to 2 decimal places
-            budgets[category] = round(suggested_budget, 2)
+            active_categories[category] = {
+                "avg_spend": avg_spend,
+                "frequency": pattern["frequency"],
+                "priority": priority_settings["priority"],
+                "min_percent": priority_settings["min_percent"],
+                "max_percent": priority_settings["max_percent"]
+            }
+        
+        # Allocate budget by priority levels for active categories only
+        for priority in range(1, 5):  # Process priorities from highest (1) to lowest (4)
+            priority_categories = {
+                cat: stats for cat, stats in active_categories.items() 
+                if stats["priority"] == priority
+            }
+            
+            for category, stats in priority_categories.items():
+                # Calculate suggested budget based on historical spending proportion
+                spending_proportion = stats["avg_spend"] / total_spending if total_spending > 0 else 0
+                suggested_amount = period_income * spending_proportion
+                
+                # Apply minimum and maximum constraints
+                min_amount = (period_income * stats["min_percent"]) / 100
+                max_amount = (period_income * stats["max_percent"]) / 100
+                
+                # Find appropriate budget amount
+                if stats["avg_spend"] > 0:
+                    # Use historical spending as a base, but constrain within min-max range
+                    actual_budget = min(max(suggested_amount, min_amount), max_amount)
+                else:
+                    # If no spending history, use minimum recommended amount
+                    actual_budget = min_amount
+                
+                # Ensure we don't exceed remaining income
+                actual_budget = min(actual_budget, remaining_income)
+                budgets[category] = round(actual_budget, 2)
+                remaining_income -= actual_budget
+        
+        # If there's remaining income, distribute proportionally to existing categories
+        if remaining_income > 0:
+            total_allocated = sum(budgets.values())
+            for category in budgets:
+                proportion = budgets[category] / total_allocated if total_allocated > 0 else 0
+                extra_amount = remaining_income * proportion
+                budgets[category] = round(budgets[category] + extra_amount, 2)
         
         return budgets
 
@@ -187,10 +279,10 @@ class AIBudgetService:
         period_text = 'daily' if period_type == 'daily' else 'monthly' if period_type == 'monthly' else 'yearly'
         divisor = self._get_period_divisor(1, period_type)
         
-        # Analyze each category
+        # Analyze categories that exist in spending patterns
         for category, pattern in spending_patterns.items():
-            avg = pattern["total"] * divisor  # Convert to period average
-            budget = category_budgets[category]
+            avg = pattern["total"] * divisor
+            budget = category_budgets.get(category, 0)
             
             if avg > budget:
                 reduction = avg - budget
@@ -207,3 +299,13 @@ class AIBudgetService:
                 )
         
         return recommendations
+
+# FastAPI router endpoint
+@router.get("/budget-plan")
+async def get_budget_plan(
+    user_id: str = Depends(get_current_user),
+    period_type: str = Query(default='monthly', regex='^(daily|monthly|yearly)$')
+):
+    service = AIBudgetService(user_id)
+    budget_plan = service.generate_budget_plan(period_type)
+    return budget_plan

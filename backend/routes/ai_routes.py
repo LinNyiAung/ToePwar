@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from database import transactions_collection, goals_collection
-from services.ai_budget_service import AIBudgetService
 from utils import get_current_user
 from datetime import datetime, timedelta
 from sklearn.linear_model import LinearRegression
@@ -363,11 +362,3 @@ def calculate_goal_probability(monthly_required: float, savings_forecast: list) 
     return round(probability, 2)
 
 
-@router.get("/budget-plan")
-async def get_budget_plan(
-    user_id: str = Depends(get_current_user),
-    period_type: str = Query(default='monthly', regex='^(daily|monthly|yearly)$')
-):
-    service = AIBudgetService(user_id)
-    budget_plan = service.generate_budget_plan(period_type)
-    return budget_plan
