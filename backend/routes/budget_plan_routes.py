@@ -161,19 +161,21 @@ class AIBudgetService:
         # Modified from 50/30/20 to 60/25/15 rule to account for higher essential expenses
         category_priorities = {
             # Needs (Essential) - Target: 60% of income
-            "Food/Groceries": {"priority": 1, "min_percent": 20, "max_percent": 30, "category_type": "needs"},  # Higher food allocation
-            "Rent/Housing": {"priority": 1, "min_percent": 15, "max_percent": 25, "category_type": "needs"},
-            "Transportation": {"priority": 1, "min_percent": 8, "max_percent": 12, "category_type": "needs"},  # Account for fuel costs
+            "Groceries": {"priority": 1, "min_percent": 20, "max_percent": 30, "category_type": "needs"},  # Higher food allocation
+            "Rent/Mortgage": {"priority": 1, "min_percent": 15, "max_percent": 25, "category_type": "needs"},
+            "Public Transit": {"priority": 1, "min_percent": 8, "max_percent": 12, "category_type": "needs"}, 
+            "Taxi": {"priority": 1, "min_percent": 8, "max_percent": 12, "category_type": "needs"},  
             "Utilities": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "needs"},  # Electricity, water
             "Healthcare": {"priority": 1, "min_percent": 5, "max_percent": 8, "category_type": "needs"},
-            "Education": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "needs"},  # High priority in Myanmar
+            "Education fees": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "needs"},  # High priority in Myanmar
             
             # Wants (Lifestyle) - Target: 25% of income
             "Dining Out": {"priority": 2, "min_percent": 3, "max_percent": 6, "category_type": "wants"},
             "Shopping": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},
-            "Entertainment": {"priority": 2, "min_percent": 2, "max_percent": 4, "category_type": "wants"},
+            "Clothing": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},
+            "Movies/Concerts": {"priority": 2, "min_percent": 2, "max_percent": 4, "category_type": "wants"},
             "Personal Care": {"priority": 2, "min_percent": 2, "max_percent": 4, "category_type": "wants"},
-            "Donations/Charity": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},  # Important in Myanmar culture
+            "Charity": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},  # Important in Myanmar culture
             "Family Support": {"priority": 2, "min_percent": 3, "max_percent": 6, "category_type": "wants"},  # Cultural obligation
             
             # Savings/Investment - Target: 15% of income
@@ -262,15 +264,15 @@ class AIBudgetService:
         current_month = datetime.utcnow().month
         seasonal_adjustments = {
             # Rainy Season (June to October)
-            6: {"Transportation": 1.2, "Healthcare": 1.1},  # Increased transport costs
-            7: {"Transportation": 1.2, "Healthcare": 1.1},
-            8: {"Transportation": 1.2, "Healthcare": 1.1},
-            9: {"Transportation": 1.2, "Healthcare": 1.1},
-            10: {"Transportation": 1.2, "Healthcare": 1.1},
+            6: {"Public Transit": 1.2, "Taxi": 1.2, "Healthcare": 1.1},  # Increased transport costs
+            7: {"Public Transit": 1.2, "Taxi": 1.2,  "Healthcare": 1.1},
+            8: {"Public Transit": 1.2, "Taxi": 1.2,  "Healthcare": 1.1},
+            9: {"Public Transit": 1.2, "Taxi": 1.2,  "Healthcare": 1.1},
+            10: {"Public Transit": 1.2, "Taxi": 1.2,  "Healthcare": 1.1},
             
             # Festival Season (October to November)
-            10: {"Donations/Charity": 1.3, "Shopping": 1.2},  # Thadingyut
-            11: {"Donations/Charity": 1.3, "Shopping": 1.2},  # Tazaungdaing
+            10: {"Charity": 1.3, "Shopping": 1.2},  # Thadingyut
+            11: {"Charity": 1.3, "Shopping": 1.2},  # Tazaungdaing
             
             # Hot Season (March to May)
             3: {"Utilities": 1.2},  # Higher electricity for cooling
@@ -278,7 +280,7 @@ class AIBudgetService:
             5: {"Utilities": 1.3, "Healthcare": 1.1},
             
             # Myanmar New Year (April)
-            4: {"Donations/Charity": 1.4, "Shopping": 1.3},  # Thingyan adjustments
+            4: {"Charity": 1.4, "Shopping": 1.3},  # Thingyan adjustments
         }
         
         # Apply seasonal adjustments

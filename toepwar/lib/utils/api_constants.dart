@@ -37,6 +37,7 @@ class ApiConstants {
         'Taxi'
       ],
       'Personal': [
+        'Shopping',
         'Clothing',
         'Healthcare',
         'Fitness',
@@ -55,9 +56,12 @@ class ApiConstants {
         'Bank Fees'
       ],
       'Education': [
-        'Courses',
-        'Books',
-        'Online Learning'
+        'Education fees',
+      ],
+      'Investment': [
+        'Gold/Jewelry',
+        'Business Investment',
+        'Digital Assets'
       ],
       'Gifts & Donations': [
         'Gifts',
@@ -66,7 +70,8 @@ class ApiConstants {
       'Miscellaneous': [
         'Travel',
         'Electronics',
-        'Other Expenses'
+        'Other Expenses',
+        'Family Support'
       ]
     }
   };
