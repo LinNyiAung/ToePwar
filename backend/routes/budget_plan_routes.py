@@ -157,115 +157,158 @@ class AIBudgetService:
         period_income: float,
         period_type: str
     ) -> Dict[str, float]:
-        # Define base priorities for any category that might appear
+        # Updated category priorities based on common financial advice (50/30/20 rule)
+        # 50% for needs, 30% for wants, 20% for savings/debt
         category_priorities = {
-            # Essential needs
-            "Rent/Mortgage": {"priority": 1, "min_percent": 25, "max_percent": 35},
-            "Utilities": {"priority": 1, "min_percent": 5, "max_percent": 10},
-            "Groceries": {"priority": 1, "min_percent": 10, "max_percent": 15},
-            "Healthcare": {"priority": 1, "min_percent": 5, "max_percent": 10},
-            "Insurance": {"priority": 1, "min_percent": 5, "max_percent": 10},
-            "Taxes": {"priority": 1, "min_percent": 15, "max_percent": 30},
+            # Needs (Essential) - Target: 50% of income
+            "Rent/Mortgage": {"priority": 1, "min_percent": 25, "max_percent": 35, "category_type": "needs"},
+            "Utilities": {"priority": 1, "min_percent": 5, "max_percent": 8, "category_type": "needs"},
+            "Groceries": {"priority": 1, "min_percent": 8, "max_percent": 12, "category_type": "needs"},
+            "Healthcare": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "needs"},
+            "Insurance": {"priority": 1, "min_percent": 4, "max_percent": 8, "category_type": "needs"},
+            "Transportation": {"priority": 1, "min_percent": 5, "max_percent": 15, "category_type": "needs"},
             
-            # Transportation
-            "Transportation": {"priority": 2, "min_percent": 2, "max_percent": 5},
-            "Fuel": {"priority": 2, "min_percent": 3, "max_percent": 5},
-            "Car Maintenance": {"priority": 2, "min_percent": 2, "max_percent": 4},
-            "Public Transit": {"priority": 2, "min_percent": 2, "max_percent": 5},
-            "Taxi": {"priority": 2, "min_percent": 1, "max_percent": 3},
+            # Wants (Lifestyle) - Target: 30% of income
+            "Dining Out": {"priority": 2, "min_percent": 3, "max_percent": 7, "category_type": "wants"},
+            "Entertainment": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},
+            "Shopping": {"priority": 2, "min_percent": 2, "max_percent": 6, "category_type": "wants"},
+            "Hobbies": {"priority": 2, "min_percent": 1, "max_percent": 4, "category_type": "wants"},
+            "Fitness": {"priority": 2, "min_percent": 1, "max_percent": 3, "category_type": "wants"},
+            "Travel": {"priority": 2, "min_percent": 2, "max_percent": 5, "category_type": "wants"},
             
-            # Financial goals
-            "Debt Repayment": {"priority": 1, "min_percent": 10, "max_percent": 20},
-            "Bank Fees": {"priority": 2, "min_percent": 0, "max_percent": 1},
-            
-            # Personal development
-            "Courses": {"priority": 3, "min_percent": 1, "max_percent": 3},
-            "Books": {"priority": 3, "min_percent": 1, "max_percent": 2},
-            "Online Learning": {"priority": 3, "min_percent": 1, "max_percent": 3},
-            
-            # Discretionary spending
-            "Dining Out": {"priority": 3, "min_percent": 5, "max_percent": 8},
-            "Home Maintenance": {"priority": 2, "min_percent": 2, "max_percent": 5},
-            "Clothing": {"priority": 3, "min_percent": 2, "max_percent": 5},
-            "Fitness": {"priority": 3, "min_percent": 1, "max_percent": 3},
-            "Personal Care": {"priority": 3, "min_percent": 2, "max_percent": 4},
-            "Streaming Services": {"priority": 4, "min_percent": 1, "max_percent": 2},
-            "Movies/Concerts": {"priority": 4, "min_percent": 1, "max_percent": 3},
-            "Hobbies": {"priority": 4, "min_percent": 1, "max_percent": 3},
-            "Subscriptions": {"priority": 4, "min_percent": 1, "max_percent": 2},
-            "Gifts": {"priority": 3, "min_percent": 1, "max_percent": 3},
-            "Charity": {"priority": 3, "min_percent": 1, "max_percent": 5},
-            "Travel": {"priority": 4, "min_percent": 2, "max_percent": 8},
-            "Electronics": {"priority": 4, "min_percent": 1, "max_percent": 4},
-            "Other Expenses": {"priority": 4, "min_percent": 1, "max_percent": 5}
+            # Savings/Debt (Financial Goals) - Target: 20% of income
+            "Emergency Fund": {"priority": 1, "min_percent": 5, "max_percent": 10, "category_type": "savings"},
+            "Retirement": {"priority": 1, "min_percent": 5, "max_percent": 15, "category_type": "savings"},
+            "Debt Repayment": {"priority": 1, "min_percent": 5, "max_percent": 20, "category_type": "savings"},
+            "Investment": {"priority": 2, "min_percent": 2, "max_percent": 10, "category_type": "savings"},
         }
         
         # Calculate the divisor for period adjustment
         divisor = self._get_period_divisor(1, period_type)
         
-        # Initialize budgets dictionary
+        # Initialize budgets and category trackers
         budgets = {}
-        remaining_income = period_income * 0.9  # Reserve 10% for savings
+        remaining_income = period_income
+        category_totals = {"needs": 0, "wants": 0, "savings": 0}
         
-        # Only process categories that exist in spending patterns
-        active_categories = {}
-        total_spending = 0
+        # First pass: Analyze historical spending patterns
+        spending_analysis = {}
+        total_historical_spending = 0
         
         for category, pattern in spending_patterns.items():
             avg_spend = pattern["total"] * divisor
-            total_spending += avg_spend
+            total_historical_spending += avg_spend
             
-            # Use default priority settings if available, otherwise set as lowest priority
-            priority_settings = category_priorities.get(category, {
-                "priority": 4,
-                "min_percent": 1,
-                "max_percent": 5
-            })
-            
-            active_categories[category] = {
+            spending_analysis[category] = {
                 "avg_spend": avg_spend,
                 "frequency": pattern["frequency"],
-                "priority": priority_settings["priority"],
-                "min_percent": priority_settings["min_percent"],
-                "max_percent": priority_settings["max_percent"]
+                "settings": category_priorities.get(category, {
+                    "priority": 2,
+                    "min_percent": 1,
+                    "max_percent": 5,
+                    "category_type": "wants"  # Default uncategorized to wants
+                })
             }
         
-        # Allocate budget by priority levels for active categories only
-        for priority in range(1, 5):  # Process priorities from highest (1) to lowest (4)
-            priority_categories = {
-                cat: stats for cat, stats in active_categories.items() 
-                if stats["priority"] == priority
-            }
+        # Second pass: Allocate budgets based on 50/30/20 rule
+        target_allocations = {
+            "needs": 0.5 * period_income,
+            "wants": 0.3 * period_income,
+            "savings": 0.2 * period_income
+        }
+        
+        # Sort categories by priority and historical spending
+        sorted_categories = sorted(
+            spending_analysis.items(),
+            key=lambda x: (
+                x[1]["settings"]["priority"],
+                -x[1]["avg_spend"]  # Higher spending gets priority
+            )
+        )
+        
+        # Allocate budgets
+        for category, analysis in sorted_categories:
+            settings = analysis["settings"]
+            category_type = settings["category_type"]
             
-            for category, stats in priority_categories.items():
-                # Calculate suggested budget based on historical spending proportion
-                spending_proportion = stats["avg_spend"] / total_spending if total_spending > 0 else 0
-                suggested_amount = period_income * spending_proportion
+            # Calculate suggested budget based on historical spending and limits
+            min_amount = (period_income * settings["min_percent"]) / 100
+            max_amount = (period_income * settings["max_percent"]) / 100
+            
+            # Consider historical spending in budget calculation
+            if analysis["avg_spend"] > 0:
+                # Use weighted average of historical spending and recommended range
+                historical_weight = 0.7
+                recommended_weight = 0.3
                 
-                # Apply minimum and maximum constraints
-                min_amount = (period_income * stats["min_percent"]) / 100
-                max_amount = (period_income * stats["max_percent"]) / 100
+                recommended_amount = (min_amount + max_amount) / 2
+                suggested_budget = (
+                    analysis["avg_spend"] * historical_weight +
+                    recommended_amount * recommended_weight
+                )
                 
-                # Find appropriate budget amount
-                if stats["avg_spend"] > 0:
-                    # Use historical spending as a base, but constrain within min-max range
-                    actual_budget = min(max(suggested_amount, min_amount), max_amount)
-                else:
-                    # If no spending history, use minimum recommended amount
-                    actual_budget = min_amount
-                
-                # Ensure we don't exceed remaining income
-                actual_budget = min(actual_budget, remaining_income)
-                budgets[category] = round(actual_budget, 2)
-                remaining_income -= actual_budget
+                # Ensure within min-max bounds
+                suggested_budget = max(min_amount, min(suggested_budget, max_amount))
+            else:
+                # No history - use recommended minimum
+                suggested_budget = min_amount
+            
+            # Adjust for remaining allocation in category type
+            remaining_type_allocation = target_allocations[category_type] - category_totals[category_type]
+            suggested_budget = min(suggested_budget, remaining_type_allocation)
+            
+            # Ensure we don't exceed remaining total income
+            suggested_budget = min(suggested_budget, remaining_income)
+            
+            # Update trackers
+            budgets[category] = round(suggested_budget, 2)
+            remaining_income -= suggested_budget
+            category_totals[category_type] += suggested_budget
         
-        # If there's remaining income, distribute proportionally to existing categories
+        # Final pass: Adjust for seasonal variations
+        current_month = datetime.utcnow().month
+        seasonal_adjustments = {
+            # Winter months
+            12: {"Utilities": 1.2, "Entertainment": 1.1},  # December
+            1: {"Utilities": 1.2, "Clothing": 0.8},        # January
+            2: {"Utilities": 1.1},                         # February
+            
+            # Spring months
+            3: {"Home Maintenance": 1.1},                  # March
+            4: {"Shopping": 1.1},                          # April
+            5: {"Travel": 1.2},                            # May
+            
+            # Summer months
+            6: {"Travel": 1.3, "Entertainment": 1.2},      # June
+            7: {"Travel": 1.3, "Entertainment": 1.2},      # July
+            8: {"Shopping": 1.2},                          # August
+            
+            # Fall months
+            9: {"Shopping": 1.1, "Education": 1.2},        # September
+            10: {"Home Maintenance": 1.1},                 # October
+            11: {"Shopping": 1.2}                          # November
+        }
+        
+        # Apply seasonal adjustments
+        if current_month in seasonal_adjustments:
+            for category, multiplier in seasonal_adjustments[current_month].items():
+                if category in budgets:
+                    adjusted_budget = budgets[category] * multiplier
+                    if adjusted_budget <= remaining_income + budgets[category]:
+                        remaining_income -= (adjusted_budget - budgets[category])
+                        budgets[category] = round(adjusted_budget, 2)
+        
+        # Distribute any remaining income proportionally to savings categories
         if remaining_income > 0:
-            total_allocated = sum(budgets.values())
-            for category in budgets:
-                proportion = budgets[category] / total_allocated if total_allocated > 0 else 0
-                extra_amount = remaining_income * proportion
-                budgets[category] = round(budgets[category] + extra_amount, 2)
+            savings_categories = [
+                cat for cat in budgets.keys() 
+                if category_priorities.get(cat, {}).get("category_type") == "savings"
+            ]
+            
+            if savings_categories:
+                extra_per_category = remaining_income / len(savings_categories)
+                for category in savings_categories:
+                    budgets[category] = round(budgets[category] + extra_per_category, 2)
         
         return budgets
 
