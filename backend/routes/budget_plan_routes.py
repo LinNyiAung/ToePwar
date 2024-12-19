@@ -314,24 +314,122 @@ class AIBudgetService:
         period_text = 'daily' if period_type == 'daily' else 'monthly' if period_type == 'monthly' else 'yearly'
         divisor = self._get_period_divisor(1, period_type)
         
-        # Analyze categories that exist in spending patterns
+        # Track overall financial health indicators
+        total_income = sum(cat_budget for cat_budget in category_budgets.values())
+        essential_categories = {
+            'Groceries', 'Rent/Mortgage', 'Utilities', 'Healthcare', 
+            'Public Transit', 'Taxi', 'Education fees'
+        }
+        wants_categories = {
+            'Dining Out', 'Shopping', 'Entertainment', 'Personal Care',
+            'Movies/Concerts', 'Clothing'
+        }
+        savings_categories = {
+            'Emergency Fund', 'Gold/Jewelry', 'Business Investment',
+            'Insurance', 'Digital Assets'
+        }
+        
+        # Calculate category type totals
+        essentials_total = sum(category_budgets.get(cat, 0) for cat in essential_categories)
+        wants_total = sum(category_budgets.get(cat, 0) for cat in wants_categories)
+        savings_total = sum(category_budgets.get(cat, 0) for cat in savings_categories)
+        
+        # Check overall budget distribution
+        essentials_ratio = essentials_total / total_income if total_income > 0 else 0
+        wants_ratio = wants_total / total_income if total_income > 0 else 0
+        savings_ratio = savings_total / total_income if total_income > 0 else 0
+        
+        # Generate high-level financial health recommendations
+        if essentials_ratio > 0.65:
+            recommendations.append(
+                f"Your essential expenses are taking up {essentials_ratio:.1%} of your budget. "
+                f"Consider finding ways to reduce basic living costs or increase income through "
+                f"additional revenue streams."
+            )
+        
+        if savings_ratio < 0.15:
+            recommendations.append(
+                f"Your current savings rate is {savings_ratio:.1%}. Try to increase your "
+                f"savings to at least 15% of income by reducing non-essential expenses."
+            )
+        
+        # Analyze spending patterns and trends
         for category, pattern in spending_patterns.items():
-            avg = pattern["total"] * divisor
+            avg_spending = pattern["total"] * divisor
             budget = category_budgets.get(category, 0)
+            frequency = pattern["frequency"]
             
-            if avg > budget:
-                reduction = avg - budget
-                percentage = (reduction / avg) * 100
+            # Calculate variability in spending
+            if len(pattern.get("amounts", [])) > 1:
+                coefficient_variation = statistics.stdev(pattern["amounts"]) / statistics.mean(pattern["amounts"])
+                
+                if coefficient_variation > 0.5 and category in essential_categories:
+                    recommendations.append(
+                        f"Your {category} spending shows high variation. Consider setting up a "
+                        f"separate {category} fund to manage irregular expenses better."
+                    )
+            
+            # Category-specific intelligent recommendations
+            if category == "Groceries" and avg_spending > budget * 1.2:
                 recommendations.append(
-                    f"Consider reducing {period_text} {category} expenses by "
-                    f"${reduction:.2f} ({percentage:.1f}%)"
+                    f"Consider meal planning and bulk buying to reduce {period_text} grocery "
+                    f"expenses by ${(avg_spending - budget):.2f}. Local markets often offer "
+                    f"better prices than supermarkets."
                 )
             
-            if pattern["max"] > budget * 1.5:
+            elif category == "Dining Out" and avg_spending > budget * 1.3:
                 recommendations.append(
-                    f"Large irregular expenses detected in {category}. "
-                    f"Consider setting aside a {period_text} buffer for unexpected costs."
+                    f"Your {period_text} dining out expenses are {(avg_spending/budget - 1):.0%} "
+                    f"over budget. Try cooking at home more often and limiting restaurant "
+                    f"visits to special occasions."
                 )
+            
+            elif category == "Utilities" and avg_spending > budget * 1.15:
+                recommendations.append(
+                    f"Your utility bills are higher than budgeted. Consider energy-efficient "
+                    f"appliances and mindful usage during peak hours to reduce costs."
+                )
+            
+            elif category == "Emergency Fund" and budget < total_income * 0.05:
+                recommendations.append(
+                    f"Your emergency fund allocation is below recommended levels. Aim to save "
+                    f"at least 5% of your income for unexpected expenses."
+                )
+        
+        # Seasonal and cultural context
+        current_month = datetime.utcnow().month
+        
+        # Rainy season preparations (May-June)
+        if current_month in [4, 5]:
+            recommendations.append(
+                "Rainy season is approaching. Consider setting aside extra funds for "
+                "transportation and healthcare, and ensure emergency funds are adequate."
+            )
+        
+        # Festival season preparations (October-November)
+        elif current_month in [9, 10]:
+            recommendations.append(
+                "Festival season is coming up. Plan ahead for additional charitable giving "
+                "and gift expenses while maintaining your essential savings goals."
+            )
+        
+        # Thingyan preparation (March)
+        elif current_month == 3:
+            recommendations.append(
+                "With Thingyan approaching, consider allocating funds for festivities while "
+                "maintaining a balance with your regular savings and essential expenses."
+            )
+        
+        # Hot season (March-May)
+        elif current_month in [3, 4, 5]:
+            recommendations.append(
+                "During hot season, you might see increased utility costs. Consider using "
+                "fans instead of air conditioning when possible and maintaining your cooling "
+                "systems for better efficiency."
+            )
+        
+        # Prioritize and limit recommendations
+        recommendations = sorted(recommendations, key=lambda x: len(x))[:5]  # Limit to top 5 most concise recommendations
         
         return recommendations
 
