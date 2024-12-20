@@ -237,3 +237,4 @@ def delete_transaction(transaction_id: str, user_id: str = Depends(get_current_u
             status_code=500, 
             detail=f"Failed to delete transaction: {str(e)}"
         )
+    

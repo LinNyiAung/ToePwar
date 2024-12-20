@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../helpers/voice_transaction_handler.dart';
 import '../../utils/api_constants.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class AddTransactionView extends StatefulWidget {
   final String token;
@@ -14,20 +16,58 @@ class AddTransactionView extends StatefulWidget {
 
 class _AddTransactionViewState extends State<AddTransactionView> {
   late final TransactionController _transactionController;
+  late final VoiceTransactionHandler _voiceHandler;
   final _amountController = TextEditingController();
   String _selectedType = 'income';
   String? _selectedMainCategory;
   String? _selectedSubCategory;
   bool _isLoading = false;
+  bool _isListening = false;
 
   @override
   void initState() {
     super.initState();
     _transactionController = TransactionController(token: widget.token);
+    _voiceHandler = VoiceTransactionHandler(transactionController: _transactionController);
     _selectedMainCategory =
         ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
     _selectedSubCategory =
         ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
+  }
+
+  Future<void> _startVoiceInput() async {
+    try {
+      setState(() => _isListening = true);
+
+      final result = await _voiceHandler.processVoiceInput(context);
+
+      if (result != null) {
+        setState(() {
+          _selectedType = result['type'];
+          _amountController.text = result['amount'].toString();
+
+          // Find main category for the subcategory
+          final categoriesMap = ApiConstants.nestedTransactionCategories[_selectedType]!;
+          for (var mainCategory in categoriesMap.keys) {
+            if (categoriesMap[mainCategory]!.contains(result['category'])) {
+              _selectedMainCategory = mainCategory;
+              _selectedSubCategory = result['category'];
+              break;
+            }
+          }
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not understand voice input. Please try again.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error processing voice input: $e')),
+      );
+    } finally {
+      setState(() => _isListening = false);
+    }
   }
 
   Future<void> _addTransaction() async {
@@ -71,6 +111,15 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            ElevatedButton.icon(
+              onPressed: _isListening ? null : _startVoiceInput,
+              icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+              label: Text(_isListening ? 'Listening...' : 'Add by Voice'),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+            SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedType,
               decoration: InputDecoration(
