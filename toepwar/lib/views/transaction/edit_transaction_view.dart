@@ -62,6 +62,11 @@ class _EditTransactionViewState extends State<EditTransactionView> {
           _selectedType = result['type'];
           _amountController.text = result['amount'].toString();
 
+          // Update date if provided in voice input
+          if (result['date'] != null) {
+            _selectedDate = result['date'];
+          }
+
           // Find main category for the subcategory
           final categoriesMap = ApiConstants.nestedTransactionCategories[_selectedType]!;
           for (var mainCategory in categoriesMap.keys) {
@@ -105,7 +110,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  '[Action] [Amount] [Currency] for/from [Category]',
+                  '[Action] [Amount] [Currency] for/from [Category] on/from [Date]',
                   style: TextStyle(fontFamily: 'monospace'),
                 ),
                 Divider(height: 24),
@@ -114,14 +119,37 @@ class _EditTransactionViewState extends State<EditTransactionView> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                _buildExamplePhrase('💰 "Update to income 1000 dollars from salary"'),
-                _buildExamplePhrase('🛒 "Change to 50 dollars for groceries"'),
-                _buildExamplePhrase('🚗 "Update expense to 30 dollars for taxi"'),
-                _buildExamplePhrase('🍽️ "Make it 100 dollars for dining out"'),
+                _buildExamplePhrase('💰 "Update to income 1000 dollars from salary on January 15"'),
+                _buildExamplePhrase('🛒 "Change to 50 dollars for groceries from yesterday"'),
+                _buildExamplePhrase('🚗 "Update expense to 30 dollars for taxi 3 days ago"'),
+                _buildExamplePhrase('🍽️ "Make it 100 dollars for dining out on 3/15"'),
+                SizedBox(height: 16),
+                Text(
+                  'Supported Date Formats:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                _buildDateExample('• "yesterday", "today"'),
+                _buildDateExample('• "3 days ago"'),
+                _buildDateExample('• "January 15" or "Jan 15"'),
+                _buildDateExample('• "3/15" (MM/DD format)'),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDateExample(String text) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.grey[700],
+          fontSize: 14,
+        ),
       ),
     );
   }
