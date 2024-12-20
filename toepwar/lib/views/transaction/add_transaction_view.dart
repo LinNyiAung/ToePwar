@@ -23,6 +23,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   String? _selectedSubCategory;
   bool _isLoading = false;
   bool _isListening = false;
+  bool _showVoiceGuide = false;
 
   @override
   void initState() {
@@ -33,6 +34,81 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
     _selectedSubCategory =
         ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
+  }
+
+  Widget _buildVoiceGuide() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: ExpansionTile(
+        leading: Icon(Icons.help_outline),
+        title: Text('Voice Input Guide'),
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sentence Structure:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '[Action] [Amount] [Currency] for/from [Category]',
+                  style: TextStyle(fontFamily: 'monospace'),
+                ),
+                Divider(height: 24),
+                Text(
+                  'Example Phrases:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                _buildExamplePhrase('💰 "Add income 1000 dollars from salary"'),
+                _buildExamplePhrase('🛒 "Spent 50 dollars on groceries"'),
+                _buildExamplePhrase('🚗 "Add expense 30 dollars for taxi"'),
+                _buildExamplePhrase('🍽️ "Paid 100 dollars for dinning out"'),
+                SizedBox(height: 16),
+                Text(
+                  'Tips:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                _buildTip('• Speak clearly and at a normal pace'),
+                _buildTip('• Include the amount and category'),
+                _buildTip('• Wait for the blue microphone indicator'),
+                _buildTip('• You can edit details after voice input'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExamplePhrase(String text) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.blue[700],
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTip(String text) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey[700],
+        ),
+      ),
+    );
   }
 
   Future<void> _startVoiceInput() async {
@@ -101,105 +177,142 @@ class _AddTransactionViewState extends State<AddTransactionView> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriesMap =
-    ApiConstants.nestedTransactionCategories[_selectedType]!;
+    final categoriesMap = ApiConstants.nestedTransactionCategories[_selectedType]!;
 
     return Scaffold(
       appBar: AppBar(title: Text('Add Transaction')),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ElevatedButton.icon(
-              onPressed: _isListening ? null : _startVoiceInput,
-              icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
-              label: Text(_isListening ? 'Listening...' : 'Add by Voice'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 12),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Voice Input Section
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _isListening ? null : _startVoiceInput,
+                        icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+                        label: Text(_isListening ? 'Listening...' : 'Add by Voice'),
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                          backgroundColor: _isListening ? Colors.red : null,
+                        ),
+                      ),
+                      if (_isListening)
+                        Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: Text(
+                            'Listening... Speak now',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedType,
-              decoration: InputDecoration(
-                labelText: 'Transaction Type',
-                border: OutlineInputBorder(),
-              ),
-              items: ['income', 'expense'].map((type) {
-                return DropdownMenuItem(value: type, child: Text(type));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedType = value!;
-                  // Reset categories when type changes
-                  _selectedMainCategory =
-                      ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
-                  _selectedSubCategory =
-                      ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
-                });
-              },
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _amountController,
-              decoration: InputDecoration(
-                labelText: 'Amount',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedMainCategory,
-              decoration: InputDecoration(
-                labelText: 'Main Category',
-                border: OutlineInputBorder(),
-              ),
-              items: categoriesMap.keys.map((mainCategory) {
-                return DropdownMenuItem(
-                    value: mainCategory,
-                    child: Text(mainCategory)
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedMainCategory = value;
-                  // Reset subcategory to first in the new main category
-                  _selectedSubCategory =
-                      categoriesMap[_selectedMainCategory]!.first;
-                });
-              },
-            ),
-            SizedBox(height: 16),
 
-            // Subcategory Dropdown
-            DropdownButtonFormField<String>(
-              value: _selectedSubCategory,
-              decoration: InputDecoration(
-                labelText: 'Subcategory',
-                border: OutlineInputBorder(),
+              // Voice Guide
+              _buildVoiceGuide(),
+
+              SizedBox(height: 16),
+
+              // Manual Input Fields
+              Text(
+                'Or Enter Details Manually:',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
               ),
-              items: categoriesMap[_selectedMainCategory]!.map((subCategory) {
-                return DropdownMenuItem(
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                decoration: InputDecoration(
+                  labelText: 'Transaction Type',
+                  border: OutlineInputBorder(),
+                ),
+                items: ['income', 'expense'].map((type) {
+                  return DropdownMenuItem(value: type, child: Text(type));
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedType = value!;
+                    _selectedMainCategory =
+                        ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
+                    _selectedSubCategory =
+                        ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
+                  });
+                },
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _amountController,
+                decoration: InputDecoration(
+                  labelText: 'Amount',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedMainCategory,
+                decoration: InputDecoration(
+                  labelText: 'Main Category',
+                  border: OutlineInputBorder(),
+                ),
+                items: categoriesMap.keys.map((mainCategory) {
+                  return DropdownMenuItem(
+                    value: mainCategory,
+                    child: Text(mainCategory),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMainCategory = value;
+                    _selectedSubCategory =
+                        categoriesMap[_selectedMainCategory]!.first;
+                  });
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedSubCategory,
+                decoration: InputDecoration(
+                  labelText: 'Subcategory',
+                  border: OutlineInputBorder(),
+                ),
+                items: categoriesMap[_selectedMainCategory]!.map((subCategory) {
+                  return DropdownMenuItem(
                     value: subCategory,
-                    child: Text(subCategory)
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedSubCategory = value;
-                });
-              },
-            ),
-            SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _addTransaction,
-              child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Add Transaction'),
-            ),
-          ],
+                    child: Text(subCategory),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSubCategory = value;
+                  });
+                },
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _addTransaction,
+                child: _isLoading
+                    ? CircularProgressIndicator(color: Colors.white)
+                    : Text('Add Transaction'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
