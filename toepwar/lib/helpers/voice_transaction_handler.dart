@@ -7,6 +7,23 @@ class VoiceTransactionHandler {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final TransactionController _transactionController;
 
+  // Number word mappings
+  static const Map<String, int> _numberWords = {
+    'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4,
+    'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9,
+    'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13,
+    'fourteen': 14, 'fifteen': 15, 'sixteen': 16,
+    'seventeen': 17, 'eighteen': 18, 'nineteen': 19,
+    'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
+    'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
+  };
+
+  static const Map<String, int> _multipliers = {
+    'hundred': 100,
+    'thousand': 1000,
+    'k': 1000,
+  };
+
   VoiceTransactionHandler({required TransactionController transactionController})
       : _transactionController = transactionController;
 
@@ -28,7 +45,6 @@ class VoiceTransactionHandler {
       cancelOnError: true,
     );
 
-    // Wait for speech input to complete
     await Future.delayed(const Duration(seconds: 5));
     await _speech.stop();
 
@@ -36,16 +52,77 @@ class VoiceTransactionHandler {
       return null;
     }
 
-    // Parse the voice input
     return parseVoiceInput(recognizedText);
+  }
+
+  double? _parseSpokenAmount(String text) {
+    text = text.toLowerCase();
+    List<String> words = text.split(' ');
+
+    // First try to find direct number patterns (e.g., "1000" or "1,000")
+    RegExp numericPattern = RegExp(r'\b\d+(?:,\d{3})*(?:\.\d{1,2})?\b');
+    var numericMatch = numericPattern.firstMatch(text);
+    if (numericMatch != null) {
+      String numStr = numericMatch.group(0)!.replaceAll(',', '');
+      return double.tryParse(numStr);
+    }
+
+    // Process spoken numbers
+    int currentNumber = 0;
+    int tempNumber = 0;
+    int? result;
+
+    for (int i = 0; i < words.length; i++) {
+      String word = words[i].toLowerCase();
+
+      // Check for number words
+      if (_numberWords.containsKey(word)) {
+        tempNumber += _numberWords[word]!;
+      }
+      // Check for multipliers
+      else if (_multipliers.containsKey(word)) {
+        // Handle cases like "one thousand"
+        if (tempNumber == 0) tempNumber = 1;
+
+        if (word == 'hundred') {
+          tempNumber *= 100;
+        } else if (word == 'thousand' || word == 'k') {
+          tempNumber *= 1000;
+          currentNumber += tempNumber;
+          tempNumber = 0;
+        }
+      }
+      // Handle compound numbers (e.g., "twenty one")
+      else if (word == 'and') {
+        continue;
+      }
+      // If we hit a non-number word, process what we have
+      else {
+        if (tempNumber > 0) {
+          currentNumber += tempNumber;
+          tempNumber = 0;
+        }
+      }
+    }
+
+    // Add any remaining number
+    if (tempNumber > 0) {
+      currentNumber += tempNumber;
+    }
+
+    // If we found a number, return it
+    if (currentNumber > 0) {
+      return currentNumber.toDouble();
+    }
+
+    return null;
   }
 
   Map<String, dynamic>? parseVoiceInput(String text) {
     text = text.toLowerCase();
 
-    // Extract amount
-    RegExp amountRegex = RegExp(r'\d+(\.\d{1,2})?');
-    final amount = amountRegex.firstMatch(text)?.group(0);
+    // Extract amount using the new parser
+    double? amount = _parseSpokenAmount(text);
 
     // Determine transaction type
     String type = 'expense'; // Default to expense
@@ -79,19 +156,16 @@ class VoiceTransactionHandler {
 
     return {
       'type': type,
-      'amount': double.parse(amount),
+      'amount': amount,
       'category': category,
-      'date': date, // Will be null if no date is found
+      'date': date,
     };
   }
 
   DateTime? _parseDate(String text) {
-    // Current date for reference
+    // [Existing date parsing code remains the same]
     DateTime now = DateTime.now();
 
-    // Try to parse various date formats and expressions
-
-    // Check for "today", "yesterday", "tomorrow"
     if (text.contains('today')) {
       return DateTime(now.year, now.month, now.day);
     }
@@ -99,7 +173,6 @@ class VoiceTransactionHandler {
       return DateTime(now.year, now.month, now.day - 1);
     }
 
-    // Check for relative days (e.g., "3 days ago", "last week")
     RegExp daysAgoRegex = RegExp(r'(\d+)\s*days?\s*ago');
     var daysAgoMatch = daysAgoRegex.firstMatch(text);
     if (daysAgoMatch != null) {
@@ -107,7 +180,6 @@ class VoiceTransactionHandler {
       return DateTime(now.year, now.month, now.day - daysAgo);
     }
 
-    // Check for month and day (e.g., "January 15", "Jan 15")
     final months = {
       'january': 1, 'jan': 1,
       'february': 2, 'feb': 2,
@@ -130,7 +202,6 @@ class VoiceTransactionHandler {
         if (match != null) {
           int day = int.parse(match.group(1)!);
           int monthNumber = months[month]!;
-          // If the date is in the future, assume it's from last year
           DateTime date = DateTime(now.year, monthNumber, day);
           if (date.isAfter(now)) {
             date = DateTime(now.year - 1, monthNumber, day);
@@ -140,14 +211,12 @@ class VoiceTransactionHandler {
       }
     }
 
-    // Check for MM/DD format
     RegExp dateRegex = RegExp(r'(\d{1,2})/(\d{1,2})');
     var dateMatch = dateRegex.firstMatch(text);
     if (dateMatch != null) {
       int month = int.parse(dateMatch.group(1)!);
       int day = int.parse(dateMatch.group(2)!);
       if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        // If the date is in the future, assume it's from last year
         DateTime date = DateTime(now.year, month, day);
         if (date.isAfter(now)) {
           date = DateTime(now.year - 1, month, day);

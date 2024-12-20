@@ -110,7 +110,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  '[Action] [Amount] [Currency] for/from [Category] on/from [Date]',
+                  '[Amount] [Currency] + [Category] + [Date]',
                   style: TextStyle(fontFamily: 'monospace'),
                 ),
                 Divider(height: 24),
@@ -119,10 +119,10 @@ class _EditTransactionViewState extends State<EditTransactionView> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                _buildExamplePhrase('💰 "Update to income 1000 dollars from salary on January 15"'),
-                _buildExamplePhrase('🛒 "Change to 50 dollars for groceries from yesterday"'),
-                _buildExamplePhrase('🚗 "Update expense to 30 dollars for taxi 3 days ago"'),
-                _buildExamplePhrase('🍽️ "Make it 100 dollars for dining out on 3/15"'),
+                _buildExamplePhrase('💰 "1000 dollars salary January 15"'),
+                _buildExamplePhrase('🛒 "50 dollars groceries yesterday"'),
+                _buildExamplePhrase('🚗 "30 dollars taxi 3 days ago"'),
+                _buildExamplePhrase('🍽️ "100 dollars dining out today"'),
                 SizedBox(height: 16),
                 Text(
                   'Supported Date Formats:',
