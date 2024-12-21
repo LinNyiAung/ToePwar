@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../helpers/receipt_scanner.dart';
 import '../../helpers/voice_transaction_handler.dart';
 import '../../utils/api_constants.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -15,6 +17,7 @@ class AddTransactionView extends StatefulWidget {
 }
 
 class _AddTransactionViewState extends State<AddTransactionView> {
+  final ReceiptScanner _receiptScanner = ReceiptScanner();
   late final TransactionController _transactionController;
   late final VoiceTransactionHandler _voiceHandler;
   final _amountController = TextEditingController();
@@ -34,6 +37,33 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
     _selectedSubCategory =
         ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
+  }
+
+  Future<void> _scanReceipt(ImageSource source) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final amount = await _receiptScanner.scanReceipt(source);
+
+      if (amount != null) {
+        setState(() {
+          _amountController.text = amount.toString();
+          _selectedType = 'expense';
+          _selectedMainCategory = 'Personal';
+          _selectedSubCategory = 'Shopping';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not extract amount from receipt')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error scanning receipt: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Widget _buildVoiceGuide() {
@@ -187,6 +217,48 @@ class _AddTransactionViewState extends State<AddTransactionView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Scan Receipt',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _scanReceipt(ImageSource.camera),
+                              icon: Icon(Icons.camera_alt),
+                              label: Text('Take Photo'),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _scanReceipt(ImageSource.gallery),
+                              icon: Icon(Icons.image),
+                              label: Text('Upload Receipt'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               // Voice Input Section
               Card(
                 child: Padding(
