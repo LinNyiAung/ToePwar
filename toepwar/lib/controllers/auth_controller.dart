@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../helpers/auth_storage.dart';
 import '../models/user_model.dart';
 import '../models/auth_model.dart';
 import '../utils/api_constants.dart';
@@ -16,13 +17,21 @@ class AuthController {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return User.fromJson(data);
+        final user = User.fromJson(data);
+        // Save auth data after successful login
+        await AuthStorage.saveAuthData(user);
+        return user;
       } else {
         throw Exception(json.decode(response.body)['detail'] ?? 'Login failed');
       }
     } catch (e) {
       throw Exception('Failed to login: $e');
     }
+  }
+
+  // Add logout method
+  Future<void> logout() async {
+    await AuthStorage.clearAuthData();
   }
 
   Future<void> register(String username, String email, String password) async {

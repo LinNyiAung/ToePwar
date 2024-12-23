@@ -6,6 +6,7 @@ import 'package:toepwar/views/dashboard/dashboard_view.dart';
 import 'package:toepwar/views/profile/profile_view.dart'; // Import profile view
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../../controllers/auth_controller.dart';
 import '../../../utils/api_constants.dart';
 import '../../ai/financial_forecast_view.dart';
 import '../../charts/expense_structure_view.dart';
@@ -60,6 +61,15 @@ class _DrawerWidgetState extends State<DrawerWidget> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> _logout() async {
+    await AuthController().logout();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginView()),
+          (route) => false,
+    );
   }
 
   @override
@@ -215,18 +225,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
           ListTile(
             leading: Icon(Icons.logout),
             title: Text('Logout'),
-            onTap: () {
-              // Add your logout functionality here
-              Navigator.pop(context); // Close the drawer
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LoginView(
-
-                  ),
-                ),
-              );
-            },
+            onTap: () => _logout(),
           ),
         ],
       ),

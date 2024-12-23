@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import '../../controllers/auth_controller.dart';
 import '../../utils/api_constants.dart';
 import '../auth/login_view.dart';
 import '../dashboard/widgets/drawer_widget.dart';
@@ -48,6 +49,15 @@ class _ProfileViewState extends State<ProfileView> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> _logout() async {
+    await AuthController().logout();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginView()),
+          (route) => false,
+    );
   }
 
   @override
@@ -105,16 +115,7 @@ class _ProfileViewState extends State<ProfileView> {
             ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginView(
-
-                    ),
-                  ),
-                );
-              },
+              onTap: () => _logout(),
             ),
           ],
         ),

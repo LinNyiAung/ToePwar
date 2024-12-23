@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toepwar/splash_screen.dart';
 
 import 'views/auth/login_view.dart';
 
@@ -52,7 +53,7 @@ class FinancialApp extends StatelessWidget {
           ),
         ),
       ),
-      home: LoginView(),
+      home: SplashScreen(),
     );
   }
 }
