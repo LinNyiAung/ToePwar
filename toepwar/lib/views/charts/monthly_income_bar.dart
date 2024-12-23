@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../../utils/api_constants.dart';
 
@@ -22,6 +23,12 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
   bool _isLoading = true;
   int? _selectedYear;
   List<int> _availableYears = [];
+  double _totalYearlyIncome = 0;
+  double _averageMonthlyIncome = 0;
+  final _compactCurrencyFormat = NumberFormat.compactCurrency(
+    locale: 'en_US',
+    symbol: '\$',
+  );
 
   @override
   void initState() {
@@ -31,6 +38,8 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
 
   Future<void> _fetchMonthlyIncomes() async {
     try {
+      setState(() => _isLoading = true);
+
       final response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/gettransactions'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
@@ -41,9 +50,9 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
         Map<String, double> monthlyTotals = {};
         Set<int> years = {};
 
-        // Process transactions to get monthly totals and available years
+        // Process transactions
         for (var transaction in transactions) {
-          if (transaction['type'] == 'income') {  // Changed from 'expense' to 'income'
+          if (transaction['type'] == 'income') {
             DateTime date = DateTime.parse(transaction['date']);
             String monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
             years.add(date.year);
@@ -53,24 +62,31 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
           }
         }
 
-        // Update available years
         _availableYears = years.toList()..sort((a, b) => b.compareTo(a));
 
-        // Set selected year to most recent if not already set
         if (_selectedYear == null && _availableYears.isNotEmpty) {
           _selectedYear = _availableYears.first;
         }
 
-        // Filter incomes for selected year
-        _monthlyIncomes = monthlyTotals.entries
-            .where((entry) => entry.key.startsWith(_selectedYear.toString()))
-            .map((entry) {
+        // Filter incomes for selected year and calculate statistics
+        _totalYearlyIncome = 0;
+        var filteredTotals = monthlyTotals.entries
+            .where((entry) => entry.key.startsWith(_selectedYear.toString()));
+
+        for (var entry in filteredTotals) {
+          _totalYearlyIncome += entry.value;
+        }
+
+        _monthlyIncomes = filteredTotals.map((entry) {
           return MonthlyIncome(
             month: entry.key,
             amount: entry.value,
           );
-        }).toList()
-          ..sort((a, b) => a.month.compareTo(b.month));
+        }).toList()..sort((a, b) => a.month.compareTo(b.month));
+
+        _averageMonthlyIncome = _monthlyIncomes.isEmpty
+            ? 0
+            : _totalYearlyIncome / _monthlyIncomes.length;
 
         setState(() => _isLoading = false);
       } else {
@@ -83,61 +99,96 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
   }
 
   String _formatMonth(String monthKey) {
-    final parts = monthKey.split('-');
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final monthIndex = int.parse(parts[1]) - 1;
-    return months[monthIndex];
+    final date = DateTime.parse('$monthKey-01');
+    return DateFormat('MMM').format(date);
   }
 
   Widget _buildYearDropdown() {
-    return DropdownButton<int>(
-      value: _selectedYear,
-      hint: Text('Select Year'),
-      items: _availableYears.map((year) {
-        return DropdownMenuItem<int>(
-          value: year,
-          child: Text(year.toString()),
-        );
-      }).toList(),
-      onChanged: (int? newValue) {
-        setState(() {
-          _selectedYear = newValue;
-        });
-        _fetchMonthlyIncomes();
-      },
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: DropdownButton<int>(
+        value: _selectedYear,
+        hint: Text('Select Year'),
+        underline: Container(),
+        items: _availableYears.map((year) {
+          return DropdownMenuItem<int>(
+            value: year,
+            child: Text(
+              year.toString(),
+              style: TextStyle(fontSize: 16),
+            ),
+          );
+        }).toList(),
+        onChanged: (int? newValue) {
+          setState(() => _selectedYear = newValue);
+          _fetchMonthlyIncomes();
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatistics() {
+    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _buildStatCard(
+          'Yearly Total',
+          currencyFormat.format(_totalYearlyIncome),
+          Icons.calendar_today,
+        ),
+        _buildStatCard(
+          'Monthly Average',
+          currencyFormat.format(_averageMonthlyIncome),
+          Icons.show_chart,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(title, style: TextStyle(fontSize: 12)),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
-    }
-
-    if (_monthlyIncomes.isEmpty) {
       return Card(
         elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Monthly Income',  // Changed from 'Monthly Expenses'
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  _buildYearDropdown(),
-                ],
-              ),
-              SizedBox(height: 20),
-              Text('No income data available for selected year'),
-            ],
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: CircularProgressIndicator(),
           ),
         ),
       );
@@ -148,12 +199,13 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Monthly Income',  // Changed from 'Monthly Expenses'
+                  'Monthly Income',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -162,81 +214,131 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
                 _buildYearDropdown(),
               ],
             ),
-            SizedBox(height: 20),
-            AspectRatio(
-              aspectRatio: 1.7,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: _monthlyIncomes.map((e) => e.amount).reduce((a, b) => a > b ? a : b) * 1.2,
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        return BarTooltipItem(
-                          '\$${rod.toY.toStringAsFixed(2)}',
-                          TextStyle(color: Colors.white),
+            SizedBox(height: 24),
+            _buildStatistics(),
+            SizedBox(height: 24),
+            if (_monthlyIncomes.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    children: [
+                      Icon(Icons.show_chart, size: 48, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'No income data available for selected year',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              AspectRatio(
+                aspectRatio: 1.7,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: _monthlyIncomes.map((e) => e.amount).reduce((a, b) => a > b ? a : b) * 1.2,
+                    barTouchData: BarTouchData(
+                      enabled: true,
+                      touchTooltipData: BarTouchTooltipData(
+                        tooltipPadding: EdgeInsets.all(8),
+                        tooltipMargin: 8,
+                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                          return BarTooltipItem(
+                            '${_formatMonth(_monthlyIncomes[group.x].month)}\n${NumberFormat.currency(symbol: '\$').format(rod.toY)}',
+                            TextStyle(color: Colors.white),
+                          );
+                        },
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          getTitlesWidget: (value, meta) {
+                            if (value >= 0 && value < _monthlyIncomes.length) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _formatMonth(_monthlyIncomes[value.toInt()].month),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }
+                            return Text('');
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 60,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              _compactCurrencyFormat.format(value),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: 1000,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: Colors.grey.shade200,
+                          strokeWidth: 1,
                         );
                       },
                     ),
-                  ),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          if (value >= 0 && value < _monthlyIncomes.length) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                _formatMonth(_monthlyIncomes[value.toInt()].month),
-                                textAlign: TextAlign.center,
-                              ),
-                            );
-                          }
-                          return Text('');
-                        },
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey.shade300),
+                        left: BorderSide(color: Colors.grey.shade300),
                       ),
                     ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 60,
-                        getTitlesWidget: (value, meta) {
-                          return Text('\$${value.toInt()}');
-                        },
-                      ),
-                    ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
+                    barGroups: _monthlyIncomes.asMap().entries.map((entry) {
+                      return BarChartGroupData(
+                        x: entry.key,
+                        barRods: [
+                          BarChartRodData(
+                            toY: entry.value.amount,
+                            gradient: LinearGradient(
+                              colors: [Colors.greenAccent, Colors.green],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                            width: 16,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ],
+                      );
+                    }).toList(),
                   ),
-                  gridData: FlGridData(
-                    show: true,
-                    horizontalInterval: 1000,
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                  ),
-                  barGroups: _monthlyIncomes.asMap().entries.map((entry) {
-                    return BarChartGroupData(
-                      x: entry.key,
-                      barRods: [
-                        BarChartRodData(
-                          toY: entry.value.amount,
-                          color: Colors.green,  // Changed from blue to green to distinguish from expense chart
-                          width: 22,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ],
-                    );
-                  }).toList(),
                 ),
               ),
-            ),
           ],
         ),
       ),
