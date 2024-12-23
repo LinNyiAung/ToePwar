@@ -12,6 +12,7 @@ class AppColors {
   static const Color textPrimary = Colors.black;
   static const Color textSecondary = Color(0xFF757575);
   static const Color white = Colors.white;
+  static const Color grey = Color(0xFFEEEEEE);
 }
 
 void main() {
@@ -26,7 +27,9 @@ class FinancialApp extends StatelessWidget {
       title: 'Financial Management App',
       theme: ThemeData(
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.background,
+        cardColor: AppColors.background,
+
+        scaffoldBackgroundColor: AppColors.grey,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,

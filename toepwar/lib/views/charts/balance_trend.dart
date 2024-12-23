@@ -164,6 +164,7 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
 
     if (_balancePoints.isEmpty) {
       return Card(
+        color: Theme.of(context).cardColor,
         elevation: 2,
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -187,6 +188,7 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
     }
 
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),

@@ -175,6 +175,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
 
     if (_categories.isEmpty) {
       return Card(
+        color: Theme.of(context).cardColor,
         elevation: 2,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -190,6 +191,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
     }
 
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Column(
         children: [

@@ -37,6 +37,7 @@ class TransactionListItem extends StatelessWidget {
       child: ListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
+
           width: 40,
           height: 40,
           decoration: BoxDecoration(

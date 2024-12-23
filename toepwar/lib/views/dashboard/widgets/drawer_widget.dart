@@ -82,7 +82,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             height: 150,
             child: DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Theme.of(context).primaryColor,
               ),
               child: Text(
                 'Menu',

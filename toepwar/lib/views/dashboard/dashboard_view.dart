@@ -47,15 +47,21 @@ class _DashboardViewState extends State<DashboardView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dashboard'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        title: Text(
+          'Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: Colors.white),
             onPressed: _refreshDashboard,
           ),
         ],
       ),
-      drawer: DrawerWidget(  // Use the DrawerWidget here
+      drawer: DrawerWidget(
         token: widget.token,
         onTransactionChanged: _refreshDashboard,
       ),
@@ -69,19 +75,7 @@ class _DashboardViewState extends State<DashboardView> {
             }
 
             if (snapshot.hasError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Error: ${snapshot.error}'),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _refreshDashboard,
-                      child: Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
+              return _buildErrorView(snapshot.error);
             }
 
             if (!snapshot.hasData) {
@@ -107,90 +101,189 @@ class _DashboardViewState extends State<DashboardView> {
             _refreshDashboard();
           }
         },
-        child: Icon(Icons.add),
+        child: Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }
 
-  Widget _buildDashboardContent(Dashboard dashboard, List<Transaction> transactions) {
-    return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        _buildSummaryCard(dashboard),
-        SizedBox(height: 24),
-        _buildRecentTransactions(transactions),
-        SizedBox(height: 24),
-        _buildRecentGoals(dashboard.recentGoals),
-        SizedBox(height: 24),
-        BalanceTrendChart(token: widget.token),
-        SizedBox(height: 24),
-        ExpensePieChart(token: widget.token),
-        SizedBox(height: 24),
-        IncomePieChart(token: widget.token),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(Dashboard dashboard) {
-    return Card(
-      elevation: 2,
+  Widget _buildErrorView(dynamic error) {
+    return Center(
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Summary',
-              style: Theme.of(context).textTheme.titleLarge,
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Colors.red,
             ),
             SizedBox(height: 16),
-            _buildSummaryItem(
-              'Income',
-              dashboard.totalIncome,
-              Colors.green,
+            Text(
+              'Error: ${error.toString()}',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
             ),
-            SizedBox(height: 8),
-            _buildSummaryItem(
-              'Expense',
-              dashboard.totalExpense,
-              Colors.red,
+            SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _refreshDashboard,
+              icon: Icon(Icons.refresh),
+              label: Text('Retry'),
             ),
-            SizedBox(height: 8),
-            _buildSummaryItem(
-              'Balance',
-              dashboard.balance,
-              dashboard.balance >= 0 ? Colors.blue : Colors.orange,
-            ),
-
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSummaryItem(String label, double amount, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium,
+  Widget _buildDashboardContent(Dashboard dashboard, List<Transaction> transactions) {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Container(
+
+            color: Theme.of(context).primaryColor,
+            child: Column(
+              children: [
+                _buildSummaryCards(dashboard),
+                Container(
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        Text(
-          '\$${amount.toStringAsFixed(2)}',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: color,
-            fontWeight: FontWeight.bold,
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              _buildRecentTransactions(transactions),
+              SizedBox(height: 24),
+              _buildRecentGoals(dashboard.recentGoals),
+              SizedBox(height: 24),
+              BalanceTrendChart(token: widget.token),
+              SizedBox(height: 24),
+              ExpensePieChart(token: widget.token),
+              SizedBox(height: 24),
+              IncomePieChart(token: widget.token),
+            ]),
           ),
         ),
       ],
     );
   }
 
+  Widget _buildSummaryCards(Dashboard dashboard) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: Text(
+              'Financial Overview',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildSummaryCard(
+                  'Income',
+                  dashboard.totalIncome,
+                  Icons.arrow_upward,
+                  Colors.green,
+                ),
+                SizedBox(width: 16),
+                _buildSummaryCard(
+                  'Expense',
+                  dashboard.totalExpense,
+                  Icons.arrow_downward,
+                  Colors.red,
+                ),
+                SizedBox(width: 16),
+                _buildSummaryCard(
+                  'Balance',
+                  dashboard.balance,
+                  Icons.account_balance_wallet,
+                  dashboard.balance >= 0 ? Colors.blue : Colors.orange,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, double amount, IconData icon, Color color) {
+    return Container(
+      width: 160,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '\$${amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   Widget _buildRecentGoals(List<Goal> goals) {
     if (goals.isEmpty) {
       return Card(
+        color: Theme.of(context).cardColor,
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Center(
@@ -201,6 +294,7 @@ class _DashboardViewState extends State<DashboardView> {
     }
 
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,6 +355,7 @@ class _DashboardViewState extends State<DashboardView> {
   Widget _buildRecentTransactions(List<Transaction> transactions) {
     if (transactions.isEmpty) {
       return Card(
+        color: Theme.of(context).cardColor,
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Center(
@@ -271,6 +366,7 @@ class _DashboardViewState extends State<DashboardView> {
     }
 
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
