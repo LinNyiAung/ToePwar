@@ -353,11 +353,8 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-                  ),
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
@@ -486,11 +483,8 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-        ),
+        color: Colors.blue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
