@@ -21,9 +21,26 @@ class BalanceTrendChart extends StatefulWidget {
 class _BalanceTrendChartState extends State<BalanceTrendChart> {
   List<BalancePoint> _balancePoints = [];
   bool _isLoading = true;
-  String _selectedInterval = 'Monthly'; // Default to monthly view
+  String _selectedInterval = 'Monthly';
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
+  double? _minBalance;
+  double? _maxBalance;
+  bool _showGridLines = true;
+
+  String _formatCompactNumber(double number) {
+    if (number.abs() >= 1000000000) {
+      return '\$${(number / 1000000000).toStringAsFixed(1)}B';
+    } else if (number.abs() >= 1000000) {
+      return '\$${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number.abs() >= 1000) {
+      return '\$${(number / 1000).toStringAsFixed(1)}K';
+    } else {
+      return '\$${number.toStringAsFixed(0)}';
+    }
+  }
+
+  final currencyFormatter = NumberFormat.currency(symbol: '\$');
 
   @override
   void initState() {
@@ -34,9 +51,6 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
 
   void _initializeDates() {
     final now = DateTime.now();
-    // Default to showing last 30 days for daily view
-    // Last 12 months for monthly view
-    // Last 5 years for yearly view
     switch (_selectedInterval) {
       case 'Daily':
         _selectedStartDate = now.subtract(Duration(days: 30));
@@ -71,7 +85,10 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
     } catch (e) {
       print('Error fetching transactions: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load balance data')),
+        SnackBar(
+          content: Text('Failed to load balance data'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -79,12 +96,13 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
   }
 
   void _processTransactions(List<dynamic> transactions) {
-    // Sort transactions by date
     transactions.sort((a, b) =>
         DateTime.parse(a['date']).compareTo(DateTime.parse(b['date'])));
 
     Map<String, double> balanceMap = {};
     double runningBalance = 0;
+    _minBalance = double.infinity;
+    _maxBalance = double.negativeInfinity;
 
     for (var transaction in transactions) {
       DateTime date = DateTime.parse(transaction['date']);
@@ -99,22 +117,15 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
         runningBalance -= amount;
       }
 
-      String key;
-      switch (_selectedInterval) {
-        case 'Daily':
-          key = DateFormat('yyyy-MM-dd').format(date);
-          break;
-        case 'Monthly':
-          key = DateFormat('yyyy-MM').format(date);
-          break;
-        case 'Yearly':
-          key = DateFormat('yyyy').format(date);
-          break;
-        default:
-          key = DateFormat('yyyy-MM').format(date);
-      }
-
+      String key = _getDateKey(date);
       balanceMap[key] = runningBalance;
+
+      _minBalance = _minBalance!.compareTo(runningBalance) <= 0
+          ? _minBalance
+          : runningBalance;
+      _maxBalance = _maxBalance!.compareTo(runningBalance) >= 0
+          ? _maxBalance
+          : runningBalance;
     }
 
     _balancePoints = balanceMap.entries.map((entry) {
@@ -123,6 +134,19 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
         balance: entry.value,
       );
     }).toList();
+  }
+
+  String _getDateKey(DateTime date) {
+    switch (_selectedInterval) {
+      case 'Daily':
+        return DateFormat('yyyy-MM-dd').format(date);
+      case 'Monthly':
+        return DateFormat('yyyy-MM').format(date);
+      case 'Yearly':
+        return DateFormat('yyyy').format(date);
+      default:
+        return DateFormat('yyyy-MM').format(date);
+    }
   }
 
   String _formatDate(String date) {
@@ -156,30 +180,71 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
     );
   }
 
+  Widget _buildBalanceStats() {
+    if (_minBalance == null || _maxBalance == null) return SizedBox();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatCard('Lowest', _minBalance!),
+          _buildStatCard('Highest', _maxBalance!),
+          _buildStatCard('Current', _balancePoints.last.balance),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, double value) {
+    Color textColor = value < 0 ? Colors.red : Colors.green;
+
+    return Column(
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        Text(
+          _formatCompactNumber(value),
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return Card(
+        color: Theme.of(context).cardColor,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
     }
 
     if (_balancePoints.isEmpty) {
       return Card(
         color: Theme.of(context).cardColor,
-        elevation: 2,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Text(
                 'Balance Trend',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               SizedBox(height: 10),
               _buildIntervalSelector(),
               SizedBox(height: 20),
+              Icon(Icons.show_chart, size: 48, color: Colors.grey),
               Text('No balance data available for selected period'),
             ],
           ),
@@ -189,20 +254,17 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
 
     return Card(
       color: Theme.of(context).cardColor,
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Text(
               'Balance Trend',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             SizedBox(height: 10),
             _buildIntervalSelector(),
+            _buildBalanceStats(),
             SizedBox(height: 20),
             AspectRatio(
               aspectRatio: 1.7,
@@ -217,12 +279,33 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
                         );
                       }).toList(),
                       isCurved: true,
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                       barWidth: 3,
-                      dotData: FlDotData(show: true),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) {
+                          Color dotColor = spot.y < 0
+                              ? Colors.red
+                              : Colors.green;
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: dotColor,
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          );
+                        },
+                      ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.blue.withOpacity(0.2),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
                       ),
                     ),
                   ],
@@ -230,6 +313,7 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        interval: _balancePoints.length > 10 ? 2 : 1,
                         getTitlesWidget: (value, meta) {
                           if (value >= 0 && value < _balancePoints.length) {
                             return Padding(
@@ -238,7 +322,10 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
                                 angle: _selectedInterval == 'Daily' ? 0.7 : 0,
                                 child: Text(
                                   _formatDate(_balancePoints[value.toInt()].date),
-                                  style: TextStyle(fontSize: 10),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Theme.of(context).textTheme.bodySmall?.color,
+                                  ),
                                 ),
                               ),
                             );
@@ -252,7 +339,13 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
                         showTitles: true,
                         reservedSize: 60,
                         getTitlesWidget: (value, meta) {
-                          return Text('\$${value.toInt()}');
+                          return Text(
+                            _formatCompactNumber(value),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(context).textTheme.bodySmall?.color,
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -263,8 +356,30 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  gridData: FlGridData(show: true),
+                  gridData: FlGridData(
+                    show: _showGridLines,
+                    drawHorizontalLine: true,
+                    drawVerticalLine: true,
+                    horizontalInterval: (_maxBalance! - _minBalance!) / 5,
+                  ),
                   borderData: FlBorderData(show: true),
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((LineBarSpot spot) {
+                          final date = _balancePoints[spot.x.toInt()].date;
+                          return LineTooltipItem(
+                            '${_formatDate(date)}\n${_formatCompactNumber(spot.y)}',
+                            TextStyle(
+                              color: spot.y < 0 ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
