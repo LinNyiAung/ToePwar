@@ -266,7 +266,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 4),
           Text(
-            '\$${amount.toStringAsFixed(2)}',
+            'K${amount.toStringAsFixed(2)}',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -340,7 +340,7 @@ class _DashboardViewState extends State<DashboardView> {
                       color: goal.completed ? Colors.green : Theme.of(context).primaryColor,
                     ),
                     SizedBox(height: 4),
-                    Text('\$${goal.currentAmount.toStringAsFixed(2)} / \$${goal.targetAmount.toStringAsFixed(2)}'),
+                    Text('K${goal.currentAmount.toStringAsFixed(2)} / K${goal.targetAmount.toStringAsFixed(2)}'),
                   ],
                 ),
                 trailing: Text('${goal.progress.toStringAsFixed(1)}%'),
