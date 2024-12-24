@@ -69,7 +69,10 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Transaction History'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        title: Text('Transaction History', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list),
@@ -147,7 +150,8 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             setState(() {}); // Refresh the list
           }
         },
-        child: Icon(Icons.add),
+        child: Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }
