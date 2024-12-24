@@ -261,7 +261,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
             ),
             SizedBox(width: 4),
             Text(
-              '${category.category}: \$${category.amount.toStringAsFixed(2)}',
+              '${category.category}: K${category.amount.toStringAsFixed(2)}',
               style: TextStyle(fontSize: 12),
             ),
           ],

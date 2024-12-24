@@ -27,7 +27,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
   double _averageMonthlyIncome = 0;
   final _compactCurrencyFormat = NumberFormat.compactCurrency(
     locale: 'en_US',
-    symbol: '\$',
+    symbol: 'K',
   );
 
   @override
@@ -132,7 +132,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
   }
 
   Widget _buildStatistics() {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: 'K');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
@@ -253,7 +253,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
                         tooltipMargin: 8,
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           return BarTooltipItem(
-                            '${_formatMonth(_monthlyIncomes[group.x].month)}\n${NumberFormat.currency(symbol: '\$').format(rod.toY)}',
+                            '${_formatMonth(_monthlyIncomes[group.x].month)}\n${NumberFormat.currency(symbol: 'K').format(rod.toY)}',
                             TextStyle(color: Colors.white),
                           );
                         },

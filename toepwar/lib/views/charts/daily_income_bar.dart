@@ -27,7 +27,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
   double _averageDailyIncome = 0;
   final _compactCurrencyFormat = NumberFormat.compactCurrency(
     locale: 'en_US',
-    symbol: '\$',
+    symbol: 'K',
   );
 
   @override
@@ -142,7 +142,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
   }
 
   Widget _buildStatistics() {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: 'K');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
@@ -265,7 +265,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
                         tooltipMargin: 8,
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           return BarTooltipItem(
-                            '${_formatDate(_dailyIncomes[group.x].date)}\n${NumberFormat.currency(symbol: '\$').format(rod.toY)}',
+                            '${_formatDate(_dailyIncomes[group.x].date)}\n${NumberFormat.currency(symbol: 'K').format(rod.toY)}',
                             TextStyle(color: Colors.white),
                           );
                         },
