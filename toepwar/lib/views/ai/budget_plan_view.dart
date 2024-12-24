@@ -55,10 +55,13 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text('AI Budget Plan', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(
+          'AI Budget Plan',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchBudgetPlan,
           ),
         ],
@@ -67,49 +70,116 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
         token: widget.token,
         onTransactionChanged: () => _fetchBudgetPlan(),
       ),
-      body: Column(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _budgetPlan == null
+          ? _buildEmptyState()
+          : _buildContent(),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildPeriodSelector(),
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : _budgetPlan == null
-                ? Center(child: Text('No budget plan available'))
-                : _buildBudgetPlan(),
+          Icon(Icons.account_balance_wallet_outlined, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No budget plan available',
+            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _fetchBudgetPlan,
+            icon: Icon(Icons.refresh),
+            label: Text('Refresh'),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildContent() {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Container(
+            color: Theme.of(context).primaryColor,
+            child: Column(
+              children: [
+                _buildPeriodSelector(),
+                _buildSummaryCards(),
+                SizedBox(height: 20),
+                Container(
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              _buildCategoryBudgets(),
+              SizedBox(height: 16),
+              _buildRecommendations(),
+              SizedBox(height: 24),
+            ]),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildPeriodSelector() {
     return Card(
-      color: Theme.of(context).cardColor,
       margin: EdgeInsets.all(16),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Budget Period:',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            DropdownButton<String>(
-              value: _selectedPeriod,
-              items: [
-                DropdownMenuItem(value: 'daily', child: Text('Daily')),
-                DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
-              ],
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _selectedPeriod = newValue;
-                  });
-                  _fetchBudgetPlan();
-                }
-              },
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedPeriod,
+                  items: [
+                    DropdownMenuItem(value: 'daily', child: Text('Daily')),
+                    DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
+                    DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
+                  ],
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      setState(() => _selectedPeriod = newValue);
+                      _fetchBudgetPlan();
+                    }
+                  },
+                ),
+              ),
             ),
           ],
         ),
@@ -117,75 +187,100 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
     );
   }
 
-  Widget _buildBudgetPlan() {
+  Widget _buildSummaryCards() {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-
-    return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        _buildSummaryCard(currencyFormat),
-        SizedBox(height: 16),
-        _buildCategoryBudgets(currencyFormat),
-        SizedBox(height: 16),
-        _buildRecommendations(),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(NumberFormat format) {
-    return Card(
-      color: Theme.of(context).cardColor,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Monthly Budget Summary',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            SizedBox(height: 16),
-            _buildSummaryRow(
-              'Total Budget',
-              _budgetPlan!['total_budget'],
-              format,
-              Colors.blue,
-            ),
-            _buildSummaryRow(
-              'Savings Target',
-              _budgetPlan!['savings_target'],
-              format,
-              Colors.green,
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Budget Period: ${DateFormat('MMM d').format(DateTime.parse(_budgetPlan!['start_date']))} - ${DateFormat('MMM d').format(DateTime.parse(_budgetPlan!['end_date']))}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
+    return Container(
+      height: 150,
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildSummaryCard(
+            'Total Budget',
+            _budgetPlan!['total_budget'],
+            Icons.account_balance_wallet,
+            Colors.blue,
+            currencyFormat,
+          ),
+          _buildSummaryCard(
+            'Savings Target',
+            _budgetPlan!['savings_target'],
+            Icons.savings,
+            Colors.green,
+            currencyFormat,
+          ),
+          _buildDateRangeCard(
+            DateFormat('MMM d').format(DateTime.parse(_budgetPlan!['start_date'])),
+            DateFormat('MMM d').format(DateTime.parse(_budgetPlan!['end_date'])),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSummaryRow(
-      String label,
-      double value,
-      NumberFormat format,
+  Widget _buildSummaryCard(
+      String title,
+      double amount,
+      IconData icon,
       Color color,
+      NumberFormat format,
       ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      width: 190,
+      margin: EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
         children: [
-          Text(label, style: Theme.of(context).textTheme.titleMedium),
-          Text(
-            format.format(value),
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+          Positioned(
+            right: -10,
+            top: -10,
+            child: Icon(
+              icon,
+              size: 80,
+              color: color.withOpacity(0.1),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  format.format(amount),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -193,39 +288,136 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
     );
   }
 
-  Widget _buildCategoryBudgets(NumberFormat format) {
-    final categoryBudgets = Map<String, double>.from(_budgetPlan!['category_budgets']);
-
-    return Card(
-      color: Theme.of(context).cardColor,
+  Widget _buildDateRangeCard(String startDate, String endDate) {
+    return Container(
+      width: 180,
+      margin: EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Category Budgets',
-              style: Theme.of(context).textTheme.headlineSmall,
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.calendar_today, color: Colors.purple),
             ),
             SizedBox(height: 16),
-            ...categoryBudgets.entries.map((entry) => Column(
+            Text(
+              'Period',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              '$startDate - $endDate',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.purple,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryBudgets() {
+    final categoryBudgets = Map<String, double>.from(_budgetPlan!['category_budgets']);
+    final totalBudget = _budgetPlan!['total_budget'] as double;
+    final currencyFormat = NumberFormat.currency(symbol: '\$');
+
+    return Card(
+      color: Theme.of(context).cardColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Icon(Icons.pie_chart, color: Theme.of(context).primaryColor),
+                SizedBox(width: 8),
+                Text(
+                  'Category Budgets',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            ...categoryBudgets.entries.map((entry) {
+              final percentage = (entry.value / totalBudget * 100).toStringAsFixed(1);
+              return Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      entry.key,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(entry.key),
+                        Text(
+                          currencyFormat.format(entry.value),
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
+                    SizedBox(height: 8),
+                    Stack(
+                      children: [
+                        Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        FractionallySizedBox(
+                          widthFactor: entry.value / totalBudget,
+                          child: Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
                     Text(
-                      format.format(entry.value),
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      '$percentage%',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
-              ],
-            )).toList(),
+              );
+            }).toList(),
           ],
         ),
       ),
@@ -237,27 +429,44 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
 
     return Card(
       color: Theme.of(context).cardColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'AI Recommendations',
-              style: Theme.of(context).textTheme.headlineSmall,
+            Row(
+              children: [
+                Icon(Icons.lightbulb_outline, color: Colors.amber),
+                SizedBox(width: 8),
+                Text(
+                  'AI Recommendations',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 16),
             ...recommendations.map((recommendation) => Padding(
-              padding: EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.lightbulb_outline, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(recommendation),
-                  ),
-                ],
+              padding: EdgeInsets.only(bottom: 12),
+              child: Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.tips_and_updates,
+                        color: Theme.of(context).primaryColor, size: 20),
+                    SizedBox(width: 12),
+                    Expanded(child: Text(recommendation)),
+                  ],
+                ),
               ),
             )).toList(),
           ],
