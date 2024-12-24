@@ -35,7 +35,10 @@ class _IncomeStructureViewState extends State<IncomeStructureView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Income Charts'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        title: Text('Income Charts', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -77,7 +80,8 @@ class _IncomeStructureViewState extends State<IncomeStructureView> {
             _refreshData();
           }
         },
-        child: Icon(Icons.add),
+        child: Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }

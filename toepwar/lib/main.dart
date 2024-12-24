@@ -24,7 +24,7 @@ class FinancialApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Financial Management App',
+      title: 'Toe Pwar',
       theme: ThemeData(
         primaryColor: AppColors.primary,
         cardColor: AppColors.background,

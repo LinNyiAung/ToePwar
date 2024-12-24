@@ -152,6 +152,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -184,6 +185,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Card(
+        color: Theme.of(context).cardColor,
         elevation: 2,
         child: Center(
           child: Padding(
@@ -195,6 +197,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
     }
 
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),

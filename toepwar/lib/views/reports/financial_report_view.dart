@@ -68,7 +68,10 @@ class _FinancialReportViewState extends State<FinancialReportView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Financial Report'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('Financial Report', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           // Show current filter status
           if (_startDate != null)
@@ -152,6 +155,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
 
   Widget _buildSummaryCard(Map<String, dynamic> summary, NumberFormat format) {
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -191,6 +195,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
 
   Widget _buildCategoryBreakdown(String title, List<dynamic> categories, Color color) {
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -230,6 +235,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
     if (goals.isEmpty) return SizedBox.shrink();
 
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(

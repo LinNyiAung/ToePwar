@@ -52,7 +52,10 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('AI Budget Plan'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('AI Budget Plan', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -81,6 +84,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
 
   Widget _buildPeriodSelector() {
     return Card(
+      color: Theme.of(context).cardColor,
       margin: EdgeInsets.all(16),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16),
@@ -130,6 +134,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
 
   Widget _buildSummaryCard(NumberFormat format) {
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -192,6 +197,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
     final categoryBudgets = Map<String, double>.from(_budgetPlan!['category_budgets']);
 
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -230,6 +236,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
     final recommendations = List<String>.from(_budgetPlan!['recommendations']);
 
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(

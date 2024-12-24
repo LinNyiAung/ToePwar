@@ -170,7 +170,13 @@ class _IncomePieChartState extends State<IncomePieChart> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return Card(
+          color: Theme.of(context).cardColor,
+          elevation: 2,
+          child: Center(child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: CircularProgressIndicator(),
+          )));
     }
 
     if (_categories.isEmpty) {

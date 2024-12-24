@@ -64,7 +64,10 @@ class _ProfileViewState extends State<ProfileView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
       ),
       drawer: DrawerWidget(  // Use the DrawerWidget here
         token: widget.token, onTransactionChanged: () {  },

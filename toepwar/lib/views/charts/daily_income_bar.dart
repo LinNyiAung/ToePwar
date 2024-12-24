@@ -162,6 +162,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -194,6 +195,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Card(
+        color: Theme.of(context).cardColor,
         elevation: 2,
         child: Center(
           child: Padding(
@@ -205,6 +207,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
     }
 
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),

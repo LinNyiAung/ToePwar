@@ -34,7 +34,10 @@ class _GoalsViewState extends State<GoalsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Saving Goals'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('Saving Goals', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -75,13 +78,14 @@ class _GoalsViewState extends State<GoalsView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddGoalDialog(context),
-        child: Icon(Icons.add),
+        child: Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }
-
   Widget _buildGoalCard(Goal goal) {
     return Card(
+      color: Theme.of(context).cardColor,
       margin: EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: EdgeInsets.all(16),

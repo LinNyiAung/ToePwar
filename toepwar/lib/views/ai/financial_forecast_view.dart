@@ -59,7 +59,10 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Financial Forecast'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('Financial Forecast', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -98,6 +101,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
 
   Widget _buildTimeRangeSelector() {
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -127,6 +131,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     final savingsForecast = _forecastData!['savings_forecast'];
 
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -215,6 +220,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     final categoryForecasts = _forecastData!['category_forecasts'];
 
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -255,6 +261,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     if (goalProjections.isEmpty) return SizedBox.shrink();
 
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -324,6 +331,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     final opportunityAreas = List<Map<String, dynamic>>.from(_forecastData!['opportunity_areas'] ?? []);
 
     return Card(
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(

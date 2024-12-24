@@ -145,147 +145,176 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Column(
-        children: [
-          _buildDrawerHeader(),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _buildDrawerItem(
-                  icon: Icons.dashboard_rounded,
-                  title: 'Dashboard',
-                  onTap: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DashboardView(token: widget.token),
-                    ),
-                  ),
-                ),
-                Divider(),
-                Padding(
-                  padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
-                  child: Text(
-                    'Transactions',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.history,
-                  title: 'Transaction History',
-                  onTap: () {
-                    Navigator.push(
+      child: Container(
+        color: Theme.of(context).cardColor,
+        child: Column(
+          children: [
+            _buildDrawerHeader(),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerItem(
+                    icon: Icons.dashboard_rounded,
+                    title: 'Dashboard',
+                    onTap: () => Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TransactionHistoryView(
-                          token: widget.token,
-                          onTransactionChanged: widget.onTransactionChanged,
-                        ),
+                        builder: (context) => DashboardView(token: widget.token),
                       ),
-                    );
-                  },
-                ),
-                Divider(),
-                Padding(
-                  padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
-                  child: Text(
-                    'Analytics',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.pie_chart,
-                  title: 'Expense Analysis',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ExpenseStructureView(token: widget.token),
+                  Divider(),
+                  Padding(
+                    padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                    child: Text(
+                      'Transactions',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.trending_up,
-                  title: 'Income Analysis',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => IncomeStructureView(token: widget.token),
+                  _buildDrawerItem(
+                    icon: Icons.history,
+                    title: 'Transaction History',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TransactionHistoryView(
+                            token: widget.token,
+                            onTransactionChanged: widget.onTransactionChanged,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(),
+                  Padding(
+                    padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                    child: Text(
+                      'Analytics',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                Divider(),
-                Padding(
-                  padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
-                  child: Text(
-                    'Planning',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  _buildDrawerItem(
+                    icon: Icons.pie_chart,
+                    title: 'Expense Analysis',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ExpenseStructureView(token: widget.token),
+                      ),
                     ),
                   ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.savings,
-                  title: 'Saving Goals',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => GoalsView(token: widget.token),
+                  _buildDrawerItem(
+                    icon: Icons.trending_up,
+                    title: 'Income Analysis',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => IncomeStructureView(token: widget.token),
+                      ),
                     ),
                   ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.auto_graph,
-                  title: 'AI Forecasting',
-                  iconColor: Colors.blue,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FinancialForecastView(token: widget.token),
+                  Divider(),
+                  Padding(
+                    padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                    child: Text(
+                      'Report',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.psychology,
-                  title: 'AI Budget Plan',
-                  iconColor: Colors.blue,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BudgetPlanView(token: widget.token),
+                  _buildDrawerItem(
+                    icon: Icons.book,
+                    title: 'Financial Report',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FinancialReportView(
+                            token: widget.token,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(),
+                  Padding(
+                    padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                    child: Text(
+                      'Planning',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                Divider(),
-                _buildDrawerItem(
-                  icon: Icons.person_outline,
-                  title: 'Profile',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfileView(token: widget.token),
+                  _buildDrawerItem(
+                    icon: Icons.savings,
+                    title: 'Saving Goals',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GoalsView(token: widget.token),
+                      ),
                     ),
                   ),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.logout,
-                  title: 'Logout',
-                  iconColor: Colors.red,
-                  onTap: _logout,
-                ),
-              ],
+                  _buildDrawerItem(
+                    icon: Icons.auto_graph,
+                    title: 'AI Forecasting',
+                    iconColor: Colors.blue,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FinancialForecastView(token: widget.token),
+                      ),
+                    ),
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.psychology,
+                    title: 'AI Budget Plan',
+                    iconColor: Colors.blue,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BudgetPlanView(token: widget.token),
+                      ),
+                    ),
+                  ),
+                  Divider(),
+                  _buildDrawerItem(
+                    icon: Icons.person_outline,
+                    title: 'Profile',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfileView(token: widget.token),
+                      ),
+                    ),
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.logout,
+                    title: 'Logout',
+                    iconColor: Colors.red,
+                    onTap: _logout,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -161,6 +161,7 @@ class _DailyExpenseChartState extends State<DailyExpenseChart> {
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -193,6 +194,7 @@ class _DailyExpenseChartState extends State<DailyExpenseChart> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Card(
+        color: Theme.of(context).cardColor,
         elevation: 2,
         child: Center(
           child: Padding(
@@ -204,6 +206,7 @@ class _DailyExpenseChartState extends State<DailyExpenseChart> {
     }
 
     return Card(
+      color: Theme.of(context).cardColor,
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
