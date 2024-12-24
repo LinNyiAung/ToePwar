@@ -68,6 +68,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
 
   Widget _buildVoiceGuide() {
     return Card(
+      color: Theme.of(context).cardColor,
       margin: EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
         leading: Icon(Icons.help_outline),
@@ -205,182 +206,328 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   }
 
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildQuickInputCard() {
+    return Card(
+      color: Theme.of(context).cardColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quick Input',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickInputButton(
+                    icon: Icons.camera_alt,
+                    label: 'Camera',
+                    onTap: () => _scanReceipt(ImageSource.camera),
+                    color: Colors.blue,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _buildQuickInputButton(
+                    icon: Icons.photo_library,
+                    label: 'Gallery',
+                    onTap: () => _scanReceipt(ImageSource.gallery),
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            _buildVoiceInputButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickInputButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return Material(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoiceInputButton() {
+    return Material(
+      color: _isListening ? Colors.red.withOpacity(0.1) : Colors.purple.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: _isListening ? null : _startVoiceInput,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _isListening ? Icons.mic : Icons.mic_none,
+                color: _isListening ? Colors.red : Colors.purple,
+                size: 28,
+              ),
+              SizedBox(width: 12),
+              Text(
+                _isListening ? 'Listening...' : 'Voice Input',
+                style: TextStyle(
+                  color: _isListening ? Colors.red : Colors.purple,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionTypeSelector() {
+    return Card(
+      color: Theme.of(context).cardColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Transaction Type',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTypeButton(
+                    label: 'Income',
+                    isSelected: _selectedType == 'income',
+                    onTap: () => setState(() => _selectedType = 'income'),
+                    color: Colors.green,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _buildTypeButton(
+                    label: 'Expense',
+                    isSelected: _selectedType == 'expense',
+                    onTap: () => setState(() => _selectedType = 'expense'),
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return Material(
+      color: isSelected ? color.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? color : Colors.grey[600],
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionForm() {
     final categoriesMap = ApiConstants.nestedTransactionCategories[_selectedType]!;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Add Transaction')),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Scan Receipt',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => _scanReceipt(ImageSource.camera),
-                              icon: Icon(Icons.camera_alt),
-                              label: Text('Take Photo'),
-                            ),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => _scanReceipt(ImageSource.gallery),
-                              icon: Icon(Icons.image),
-                              label: Text('Upload Receipt'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Voice Input Section
-              Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: _isListening ? null : _startVoiceInput,
-                        icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
-                        label: Text(_isListening ? 'Listening...' : 'Add by Voice'),
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                          backgroundColor: _isListening ? Colors.red : null,
-                        ),
-                      ),
-                      if (_isListening)
-                        Padding(
-                          padding: EdgeInsets.only(top: 16),
-                          child: Text(
-                            'Listening... Speak now',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+    // Ensure we have a valid main category
+    if (!categoriesMap.containsKey(_selectedMainCategory)) {
+      _selectedMainCategory = categoriesMap.keys.first;
+    }
 
-              // Voice Guide
-              _buildVoiceGuide(),
+    // Ensure we have a valid sub category
+    if (_selectedMainCategory != null &&
+        (!categoriesMap[_selectedMainCategory]!.contains(_selectedSubCategory))) {
+      _selectedSubCategory = categoriesMap[_selectedMainCategory]!.first;
+    }
 
-              SizedBox(height: 16),
-
-              // Manual Input Fields
-              Text(
-                'Or Enter Details Manually:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
+    return Card(
+      color: Theme.of(context).cardColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Transaction Details',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
-              SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedType,
-                decoration: InputDecoration(
-                  labelText: 'Transaction Type',
-                  border: OutlineInputBorder(),
-                ),
-                items: ['income', 'expense'].map((type) {
-                  return DropdownMenuItem(value: type, child: Text(type));
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedType = value!;
-                    _selectedMainCategory =
-                        ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
-                    _selectedSubCategory =
-                        ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
-                  });
-                },
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: _amountController,
+              decoration: InputDecoration(
+                labelText: 'Amount',
+                prefixIcon: Icon(Icons.attach_money),
               ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _amountController,
-                decoration: InputDecoration(
-                  labelText: 'Amount',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedMainCategory,
+              decoration: InputDecoration(
+                labelText: 'Category',
+                prefixIcon: Icon(Icons.category),
               ),
-              SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedMainCategory,
-                decoration: InputDecoration(
-                  labelText: 'Main Category',
-                  border: OutlineInputBorder(),
-                ),
-                items: categoriesMap.keys.map((mainCategory) {
-                  return DropdownMenuItem(
-                    value: mainCategory,
-                    child: Text(mainCategory),
-                  );
-                }).toList(),
-                onChanged: (value) {
+              items: categoriesMap.keys.map((category) {
+                return DropdownMenuItem<String>(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
                   setState(() {
                     _selectedMainCategory = value;
-                    _selectedSubCategory =
-                        categoriesMap[_selectedMainCategory]!.first;
+                    // Always select the first subcategory when main category changes
+                    _selectedSubCategory = categoriesMap[value]!.first;
                   });
-                },
-              ),
-              SizedBox(height: 16),
+                }
+              },
+            ),
+            SizedBox(height: 16),
+            if (_selectedMainCategory != null) // Only show if main category is selected
               DropdownButtonFormField<String>(
                 value: _selectedSubCategory,
                 decoration: InputDecoration(
                   labelText: 'Subcategory',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.subject),
                 ),
-                items: categoriesMap[_selectedMainCategory]!.map((subCategory) {
-                  return DropdownMenuItem(
-                    value: subCategory,
-                    child: Text(subCategory),
+                items: categoriesMap[_selectedMainCategory]!.map((subcategory) {
+                  return DropdownMenuItem<String>(
+                    value: subcategory,
+                    child: Text(subcategory),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  setState(() {
-                    _selectedSubCategory = value;
-                  });
+                  if (value != null) {
+                    setState(() {
+                      _selectedSubCategory = value;
+                    });
+                  }
                 },
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        title: Text('Add Transaction', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: SingleChildScrollView(
+
+        child: Padding(
+
+          padding: EdgeInsets.all(16),
+          child: Column(
+
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildQuickInputCard(),
+              SizedBox(height: 16),
+              _buildVoiceGuide(),
+              SizedBox(height: 16),
+              _buildTransactionTypeSelector(),
+              SizedBox(height: 16),
+              _buildTransactionForm(),
               SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _addTransaction,
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text('Add Transaction'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isLoading
+                    ? CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                  'Add Transaction',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
