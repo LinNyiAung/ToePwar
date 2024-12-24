@@ -27,7 +27,7 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
   double _averageMonthlyExpense = 0;
   final _compactCurrencyFormat = NumberFormat.compactCurrency(
     locale: 'en_US',
-    symbol: '\$',
+    symbol: 'K',
   );
 
   @override
@@ -132,7 +132,7 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
   }
 
   Widget _buildStatistics() {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: 'K');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
@@ -255,7 +255,7 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
                         tooltipMargin: 8,
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           return BarTooltipItem(
-                            '${_formatMonth(_monthlyExpenses[group.x].month)}\n${NumberFormat.currency(symbol: '\$').format(rod.toY)}',
+                            '${_formatMonth(_monthlyExpenses[group.x].month)}\n${NumberFormat.currency(symbol: 'K').format(rod.toY)}',
                             TextStyle(color: Colors.white),
                           );
                         },
