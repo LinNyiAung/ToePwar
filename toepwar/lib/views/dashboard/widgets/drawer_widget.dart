@@ -77,44 +77,51 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   }
 
   Widget _buildDrawerHeader() {
-    return SizedBox(
-      width: 400,
-      child: DrawerHeader(
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor,
-
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfileView(token: widget.token),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.person,
-                size: 35,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-            SizedBox(height: 10),
-            if (!isLoading && errorMessage.isEmpty) ...[
-              Text(
-                username,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      ),
+      child: SizedBox(
+        width: 400,
+        child: DrawerHeader(
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  size: 35,
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
-              Text(
-                email,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 14,
+              SizedBox(height: 10),
+              if (!isLoading && errorMessage.isEmpty) ...[
+                Text(
+                  username,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+                Text(
+                  email,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -294,16 +301,6 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     ),
                   ),
                   Divider(),
-                  _buildDrawerItem(
-                    icon: Icons.person_outline,
-                    title: 'Profile',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProfileView(token: widget.token),
-                      ),
-                    ),
-                  ),
                   _buildDrawerItem(
                     icon: Icons.logout,
                     title: 'Logout',
