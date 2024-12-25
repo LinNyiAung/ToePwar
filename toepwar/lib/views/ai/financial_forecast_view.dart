@@ -288,7 +288,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   }
 
   List<Widget> _buildCategoryList(Map<String, dynamic> categories, Color color) {
-    final formatter = NumberFormat.currency(symbol: '\$');
+    final formatter = NumberFormat.currency(symbol: 'K');
     return categories.entries.map((entry) {
       final lastMonth = entry.value.last['amount'];
       return ListTile(
@@ -328,7 +328,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
         : probability >= 50 ? Colors.orange
         : Colors.red;
 
-    final formatter = NumberFormat.currency(symbol: '\$');
+    final formatter = NumberFormat.currency(symbol: 'K');
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 8),
@@ -718,7 +718,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
               ),
               const SizedBox(height: 4),
               Text(
-                NumberFormat.currency(symbol: '\$').format(amount),
+                NumberFormat.currency(symbol: 'K').format(amount),
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
