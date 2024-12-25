@@ -130,7 +130,7 @@ class _GoalsViewState extends State<GoalsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '\$${goal.currentAmount.toStringAsFixed(2)} / \$${goal.targetAmount.toStringAsFixed(2)}',
+                  'K${goal.currentAmount.toStringAsFixed(2)} / K${goal.targetAmount.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 Text(
