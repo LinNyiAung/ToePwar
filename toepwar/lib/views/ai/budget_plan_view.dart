@@ -188,7 +188,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
   }
 
   Widget _buildSummaryCards() {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: 'K');
     return Container(
       height: 150,
       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -226,7 +226,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
       NumberFormat format,
       ) {
     return Container(
-      width: 190,
+      width: 200,
       margin: EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -342,7 +342,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
   Widget _buildCategoryBudgets() {
     final categoryBudgets = Map<String, double>.from(_budgetPlan!['category_budgets']);
     final totalBudget = _budgetPlan!['total_budget'] as double;
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: 'K');
 
     return Card(
       color: Theme.of(context).cardColor,
