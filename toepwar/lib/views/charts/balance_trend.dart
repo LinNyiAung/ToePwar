@@ -30,17 +30,17 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
 
   String _formatCompactNumber(double number) {
     if (number.abs() >= 1000000000) {
-      return '\$${(number / 1000000000).toStringAsFixed(1)}B';
+      return 'K${(number / 1000000000).toStringAsFixed(1)}B';
     } else if (number.abs() >= 1000000) {
-      return '\$${(number / 1000000).toStringAsFixed(1)}M';
+      return 'K${(number / 1000000).toStringAsFixed(1)}M';
     } else if (number.abs() >= 1000) {
-      return '\$${(number / 1000).toStringAsFixed(1)}K';
+      return 'K${(number / 1000).toStringAsFixed(1)}K';
     } else {
-      return '\$${number.toStringAsFixed(0)}';
+      return 'K${number.toStringAsFixed(0)}';
     }
   }
 
-  final currencyFormatter = NumberFormat.currency(symbol: '\$');
+  final currencyFormatter = NumberFormat.currency(symbol: 'K');
 
   @override
   void initState() {
