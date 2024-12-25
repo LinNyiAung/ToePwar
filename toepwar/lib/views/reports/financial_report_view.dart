@@ -152,7 +152,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
 
   Widget _buildReport() {
     final summary = _reportData!['summary'];
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: 'K');
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -325,7 +325,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
                     children: [
                       Text(category['category']),
                       Text(
-                        NumberFormat.currency(symbol: '\$')
+                        NumberFormat.currency(symbol: 'K')
                             .format(category['amount']),
                         style: TextStyle(
                           color: textColor,
@@ -432,7 +432,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${NumberFormat.currency(symbol: '\$').format(goal['current_amount'])} of ${NumberFormat.currency(symbol: '\$').format(goal['target_amount'])}',
+                        '${NumberFormat.currency(symbol: 'K').format(goal['current_amount'])} of ${NumberFormat.currency(symbol: 'K').format(goal['target_amount'])}',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 12,
