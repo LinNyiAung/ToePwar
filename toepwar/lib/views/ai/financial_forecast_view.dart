@@ -87,28 +87,70 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       padding: EdgeInsets.all(16),
       children: [
         _buildTimeRangeSelector(),
-        SizedBox(height: 16),
+        _buildSummaryCards(),
         _buildForecastChart(),
-        SizedBox(height: 16),
-        _buildInsightsAndRecommendations(), // New insights section
-        SizedBox(height: 16),
+        _buildInsightsAndRecommendations(),
         _buildCategoryForecasts(),
-        SizedBox(height: 16),
         _buildGoalProjections(),
+
       ],
     );
   }
 
   Widget _buildTimeRangeSelector() {
-    return Card(
-      color: Theme.of(context).cardColor,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Forecast Range', style: Theme.of(context).textTheme.titleLarge),
-            Slider(
+    return Container(
+      margin: const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Forecast Period',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                '$_forecastMonths months',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '(1-24 months)',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderThemeData(
+              activeTrackColor: Theme.of(context).primaryColor,
+              inactiveTrackColor: Colors.grey[200],
+              thumbColor: Theme.of(context).primaryColor,
+              overlayColor: Theme.of(context).primaryColor.withOpacity(0.1),
+              trackHeight: 4,
+            ),
+            child: Slider(
               value: _forecastMonths.toDouble(),
               min: 1,
               max: 24,
@@ -119,11 +161,12 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
               },
               onChangeEnd: (value) => _fetchForecast(),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
 
   Widget _buildForecastChart() {
     final incomeForecast = _forecastData!['income_forecast'];
@@ -189,6 +232,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     );
   }
 
+
   Widget _buildChartLegend() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -215,6 +259,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       ],
     );
   }
+
 
   Widget _buildCategoryForecasts() {
     final categoryForecasts = _forecastData!['category_forecasts'];
@@ -255,6 +300,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       );
     }).toList();
   }
+
 
   Widget _buildGoalProjections() {
     final goalProjections = _forecastData!['goal_projections'];
@@ -320,6 +366,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       ),
     );
   }
+
 
 
   Widget _buildInsightsAndRecommendations() {
@@ -419,6 +466,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     );
   }
 
+
   Widget _buildRiskLevelBadge(String riskLevel) {
     Color backgroundColor;
     Color textColor = Colors.white;
@@ -464,6 +512,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       ),
     );
   }
+
 
   Widget _buildRecommendationCard(Map<String, dynamic> recommendation) {
     final priority = recommendation['priority'] ?? 'Low';
@@ -543,6 +592,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     );
   }
 
+
   Widget _buildOpportunityCard(Map<String, dynamic> opportunity) {
     return Container(
       padding: EdgeInsets.all(12),
@@ -591,5 +641,96 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       ),
     );
   }
+
+
+  Widget _buildSummaryCards() {
+    if (_forecastData == null) return const SizedBox.shrink();
+
+    final cards = [
+      _buildSummaryCard(
+        'Projected Income',
+        _forecastData!['income_forecast'].last['amount'],
+        Icons.trending_up,
+        Colors.green,
+      ),
+      _buildSummaryCard(
+        'Projected Expenses',
+        _forecastData!['expense_forecast'].last['amount'],
+        Icons.trending_down,
+        Colors.red,
+      ),
+      _buildSummaryCard(
+        'Projected Savings',
+        _forecastData!['savings_forecast'].last['amount'],
+        Icons.savings,
+        Colors.blue,
+      ),
+    ];
+
+    return Container(
+      height: 160,
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: cards.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 16),
+        itemBuilder: (context, index) => cards[index],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, double amount, IconData icon, Color color) {
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                NumberFormat.currency(symbol: '\$').format(amount),
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
 
 }
