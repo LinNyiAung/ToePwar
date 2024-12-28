@@ -2,7 +2,7 @@ from io import BytesIO
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
 from database import transactions_collection, goals_collection
-from utils import create_financial_report_excel, get_current_user
+from utils import create_financial_report_excel, create_financial_report_pdf, get_current_user
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -179,6 +179,31 @@ async def export_financial_report(
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
+
+
+@router.get("/export-financial-report-pdf")
+async def export_financial_report_pdf(
+    user_id: str = Depends(get_current_user),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None)
+):
+    # Get the financial report data using the existing function
+    report_data = get_financial_report(user_id, start_date, end_date)
+    
+    # Generate PDF
+    pdf_buffer = create_financial_report_pdf(report_data)
+    
+    # Generate filename with current timestamp
+    filename = f"financial_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+    # Return the PDF file as a downloadable response
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename={filename}"
         }

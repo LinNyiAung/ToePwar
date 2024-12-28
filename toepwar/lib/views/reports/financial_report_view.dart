@@ -107,6 +107,51 @@ class _FinancialReportViewState extends State<FinancialReportView> {
     }
   }
 
+
+  Future<void> _exportReportPDF() async {
+    setState(() => _isLoading = true);
+
+    try {
+      String url = '${ApiConstants.baseUrl}/export-financial-report-pdf?end_date=${_endDate.toIso8601String()}';
+      if (_startDate != null) {
+        url += '&start_date=${_startDate!.toIso8601String()}';
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        // Get the temporary directory for storing the file
+        final directory = await getApplicationDocumentsDirectory();
+        final fileName = 'financial_report_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+        final filePath = '${directory.path}/$fileName';
+
+        // Write the file
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+
+        // Share the file
+        await Share.shareXFiles(
+          [XFile(filePath)],
+          subject: 'Financial Report PDF',
+        );
+      } else {
+        throw Exception('Failed to export PDF report');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error exporting PDF report: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,10 +203,25 @@ class _FinancialReportViewState extends State<FinancialReportView> {
             tooltip: 'Reset to all-time view',
             onPressed: _resetFilter,
           ),
-        IconButton(
+        PopupMenuButton<String>(
           icon: const Icon(Icons.download, color: Colors.white),
-          tooltip: 'Export to Excel',
-          onPressed: _exportReport,
+          onSelected: (String choice) {
+            if (choice == 'excel') {
+              _exportReport();
+            } else if (choice == 'pdf') {
+              _exportReportPDF();
+            }
+          },
+          itemBuilder: (BuildContext context) => [
+            const PopupMenuItem<String>(
+              value: 'excel',
+              child: Text('Export as Excel'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'pdf',
+              child: Text('Export as PDF'),
+            ),
+          ],
         ),
         IconButton(
           icon: const Icon(Icons.refresh, color: Colors.white),

@@ -1,3 +1,4 @@
+from io import BytesIO
 from fastapi import HTTPException, Depends
 from jose import jwt, JWTError
 from auth import SECRET_KEY, ALGORITHM
@@ -6,6 +7,11 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils import get_column_letter
 from datetime import datetime
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.units import inch
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -131,3 +137,131 @@ def create_financial_report_excel(report_data):
         ws.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
     
     return wb
+
+
+
+def create_financial_report_pdf(report_data):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        spaceAfter=30
+    )
+    story.append(Paragraph("Financial Report", title_style))
+    
+    # Period
+    period_text = f"Report Period: {report_data['summary']['period_start']} to {report_data['summary']['period_end']}"
+    story.append(Paragraph(period_text, styles['Normal']))
+    story.append(Spacer(1, 20))
+    
+    # Summary Section
+    story.append(Paragraph("Summary", styles['Heading2']))
+    summary_data = [
+        ['Metric', 'Amount'],
+        ['Total Income', f"K{report_data['summary']['total_income']:,.2f}"],
+        ['Total Expenses', f"K{report_data['summary']['total_expense']:,.2f}"],
+        ['Net Income', f"K{report_data['summary']['net_income']:,.2f}"],
+        ['Savings Rate', f"{report_data['summary']['savings_rate']:.2f}%"]
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[2*inch, 2*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(summary_table)
+    story.append(Spacer(1, 20))
+    
+    # Income Breakdown
+    story.append(Paragraph("Income Breakdown", styles['Heading2']))
+    income_data = [['Category', 'Amount']]
+    for income in report_data['income_by_category']:
+        income_data.append([
+            income['category'],
+            f"K{income['amount']:,.2f}"
+        ])
+    
+    income_table = Table(income_data, colWidths=[2*inch, 2*inch])
+    income_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgreen),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(income_table)
+    story.append(Spacer(1, 20))
+    
+    # Expense Breakdown
+    story.append(Paragraph("Expense Breakdown", styles['Heading2']))
+    expense_data = [['Category', 'Amount']]
+    for expense in report_data['expense_by_category']:
+        expense_data.append([
+            expense['category'],
+            f"K{expense['amount']:,.2f}"
+        ])
+    
+    expense_table = Table(expense_data, colWidths=[2*inch, 2*inch])
+    expense_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.red),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.pink),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(expense_table)
+    story.append(Spacer(1, 20))
+    
+    # Goals Summary
+    if report_data['goals_summary']:
+        story.append(Paragraph("Goals Summary", styles['Heading2']))
+        goals_data = [['Goal', 'Target', 'Current', 'Progress']]
+        for goal in report_data['goals_summary']:
+            goals_data.append([
+                goal['name'],
+                f"K{goal['target_amount']:,.2f}",
+                f"K{goal['current_amount']:,.2f}",
+                f"{goal['progress']:.2f}%"
+            ])
+        
+        goals_table = Table(goals_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+        goals_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(goals_table)
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
