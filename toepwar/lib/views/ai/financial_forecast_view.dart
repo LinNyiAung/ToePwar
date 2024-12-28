@@ -225,7 +225,12 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     return LineChartBarData(
       spots: List.generate(
         data.length,
-            (i) => FlSpot(i.toDouble(), data[i]['amount'].toDouble()),
+            (i) {
+          var amount = data[i]['amount'];
+          // Convert amount to double regardless of type
+          double value = amount is int ? amount.toDouble() : (amount as double);
+          return FlSpot(i.toDouble(), value);
+        },
       ),
       color: color,
       dotData: FlDotData(show: false),
@@ -646,22 +651,31 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   Widget _buildSummaryCards() {
     if (_forecastData == null) return const SizedBox.shrink();
 
+    // Safely get the last values with null handling and type conversion
+    double getLastAmount(List<dynamic>? forecast) {
+      if (forecast == null || forecast.isEmpty) return 0.0;
+      var lastAmount = forecast.last['amount'];
+      if (lastAmount == null) return 0.0;
+      // Convert to double regardless of whether it's int or double
+      return lastAmount is int ? lastAmount.toDouble() : (lastAmount as double);
+    }
+
     final cards = [
       _buildSummaryCard(
         'Projected Income',
-        _forecastData!['income_forecast'].last['amount'],
+        getLastAmount(_forecastData!['income_forecast']),
         Icons.trending_up,
         Colors.green,
       ),
       _buildSummaryCard(
         'Projected Expenses',
-        _forecastData!['expense_forecast'].last['amount'],
+        getLastAmount(_forecastData!['expense_forecast']),
         Icons.trending_down,
         Colors.red,
       ),
       _buildSummaryCard(
         'Projected Savings',
-        _forecastData!['savings_forecast'].last['amount'],
+        getLastAmount(_forecastData!['savings_forecast']),
         Icons.savings,
         Colors.blue,
       ),
