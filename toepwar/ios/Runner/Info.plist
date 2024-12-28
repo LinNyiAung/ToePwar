@@ -2,10 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>This app needs access to speech recognition to process voice input for transactions</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app needs access to microphone to process voice input for transactions</string>
+    <key>NSCameraUsageDescription</key>
+    <string>We need access to camera to scan receipts</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to photo library to select receipt images</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Toepwar</string>
+	<string>ToePwar</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

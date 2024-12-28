@@ -252,6 +252,16 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
       );
     }
 
+
+    // Calculate a safe horizontal interval
+    double horizontalInterval = (_maxBalance! - _minBalance!);
+    if (horizontalInterval == 0) {
+      // If min and max are equal, create an artificial range
+      horizontalInterval = _maxBalance! == 0 ? 100 : _maxBalance!.abs() / 5;
+    } else {
+      horizontalInterval = horizontalInterval / 5;
+    }
+
     return Card(
       color: Theme.of(context).cardColor,
       child: Padding(
@@ -360,7 +370,7 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
                     show: _showGridLines,
                     drawHorizontalLine: true,
                     drawVerticalLine: true,
-                    horizontalInterval: (_maxBalance! - _minBalance!) / 5,
+                    horizontalInterval: horizontalInterval,
                   ),
                   borderData: FlBorderData(show: true),
                   lineTouchData: LineTouchData(
