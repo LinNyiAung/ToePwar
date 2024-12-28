@@ -5,6 +5,10 @@ import 'package:intl/intl.dart';
 import '../../utils/api_constants.dart';
 import '../charts/balance_trend.dart';
 import '../dashboard/widgets/drawer_widget.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
+import 'package:cross_file/cross_file.dart';
 
 class FinancialReportView extends StatefulWidget {
   final String token;
@@ -50,6 +54,51 @@ class _FinancialReportViewState extends State<FinancialReportView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading report: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+
+  Future<void> _exportReport() async {
+    setState(() => _isLoading = true);
+
+    try {
+      String url = '${ApiConstants.baseUrl}/export-financial-report?end_date=${_endDate.toIso8601String()}';
+      if (_startDate != null) {
+        url += '&start_date=${_startDate!.toIso8601String()}';
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        // Get the temporary directory for storing the file
+        final directory = await getApplicationDocumentsDirectory();
+        final fileName = 'financial_report_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+        final filePath = '${directory.path}/$fileName';
+
+        // Write the file
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+
+        // Share the file using the updated method
+        await Share.shareXFiles(
+          [XFile(filePath)],
+          subject: 'Financial Report',
+        );
+      } else {
+        throw Exception('Failed to export report');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error exporting report: $e'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -109,6 +158,11 @@ class _FinancialReportViewState extends State<FinancialReportView> {
             tooltip: 'Reset to all-time view',
             onPressed: _resetFilter,
           ),
+        IconButton(
+          icon: const Icon(Icons.download, color: Colors.white),
+          tooltip: 'Export to Excel',
+          onPressed: _exportReport,
+        ),
         IconButton(
           icon: const Icon(Icons.refresh, color: Colors.white),
           onPressed: _fetchReport,

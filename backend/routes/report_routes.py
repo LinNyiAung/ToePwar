@@ -1,6 +1,8 @@
+from io import BytesIO
 from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi.responses import StreamingResponse
 from database import transactions_collection, goals_collection
-from utils import get_current_user
+from utils import create_financial_report_excel, get_current_user
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -151,3 +153,33 @@ def get_financial_report(
         "expense_by_category": expense_by_category,
         "goals_summary": goals_summary
     }
+
+
+@router.get("/export-financial-report")
+async def export_financial_report(
+    user_id: str = Depends(get_current_user),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None)
+):
+    # Get the financial report data using the existing function
+    report_data = get_financial_report(user_id, start_date, end_date)
+    
+    # Create Excel workbook
+    wb = create_financial_report_excel(report_data)
+    
+    # Save to bytes buffer
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    # Generate filename with current timestamp
+    filename = f"financial_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    # Return the Excel file as a downloadable response
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
