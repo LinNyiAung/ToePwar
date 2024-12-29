@@ -17,7 +17,7 @@ class TransactionFilter {
     this.dateRange
   });
 
-  bool apply(Transaction transaction) {
+  bool apply(TransactionModel transaction) {
     bool matchesFilters = true;
 
     // Check transaction type

@@ -25,7 +25,7 @@ class DashboardView extends StatefulWidget {
 
 class _DashboardViewState extends State<DashboardView> {
   late final DashboardController _dashboardController;
-  late Future<List<Transaction>> _recentTransactions;
+  late Future<List<TransactionModel>> _recentTransactions;
   late Future<Dashboard> _dashboardData;
 
   @override
@@ -83,7 +83,7 @@ class _DashboardViewState extends State<DashboardView> {
             }
 
             final dashboard = snapshot.data![0] as Dashboard;
-            final transactions = snapshot.data![1] as List<Transaction>;
+            final transactions = snapshot.data![1] as List<TransactionModel>;
 
             return _buildDashboardContent(dashboard, transactions);
           },
@@ -137,7 +137,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _buildDashboardContent(Dashboard dashboard, List<Transaction> transactions) {
+  Widget _buildDashboardContent(Dashboard dashboard, List<TransactionModel> transactions) {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -352,7 +352,7 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _buildRecentTransactions(List<Transaction> transactions) {
+  Widget _buildRecentTransactions(List<TransactionModel> transactions) {
     if (transactions.isEmpty) {
       return Card(
         color: Theme.of(context).cardColor,
