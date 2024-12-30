@@ -56,7 +56,11 @@ class TransactionDbHelper {
 
   Future<List<TransactionModel>> getAllTransactions() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('transactions');
+    // Modified query to sort by date in descending order (newest first)
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      orderBy: 'date DESC',
+    );
 
     return List.generate(maps.length, (i) {
       return TransactionModel.fromJson(maps[i]);

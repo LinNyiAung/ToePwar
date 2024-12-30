@@ -6,10 +6,10 @@ import '../models/transaction_model.dart';
 import '../utils/api_constants.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-
 class TransactionController {
   final String token;
   final TransactionDbHelper dbHelper = TransactionDbHelper.instance;
+  DateTime? _lastSyncTime;
 
   TransactionController({required this.token});
 
@@ -18,31 +18,52 @@ class TransactionController {
     return connectivityResult != ConnectivityResult.none;
   }
 
-  Future<List<TransactionModel>> getTransactions() async {
-    try {
-      if (await hasInternetConnection()) {
-        final response = await http.get(
-          Uri.parse('${ApiConstants.baseUrl}/gettransactions'),
-          headers: {'Authorization': 'Bearer $token'},
-        );
+  Future<List<TransactionModel>> initializeData() async {
+    final localTransactions = await dbHelper.getAllTransactions();
 
-        if (response.statusCode == 200) {
-          final List<dynamic> transactionsJson = json.decode(response.body);
-          final transactions = transactionsJson
-              .map((json) => TransactionModel.fromJson(json))
-              .toList();
-
-          await dbHelper.clearAllTransactions();
-          for (var transaction in transactions) {
-            await dbHelper.insertTransaction(transaction);
-          }
-          return transactions;
-        }
+    if (await hasInternetConnection()) {
+      try {
+        await syncWithServer();
+      } catch (e) {
+        print('Failed to sync with server: $e');
       }
+    }
 
-      return await dbHelper.getAllTransactions();
+    return await dbHelper.getAllTransactions();
+  }
+
+  Future<List<TransactionModel>> getTransactions() async {
+    return await dbHelper.getAllTransactions();
+  }
+
+  Future<void> syncWithServer() async {
+    if (!await hasInternetConnection()) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/gettransactions'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> transactionsJson = json.decode(response.body);
+        final serverTransactions = transactionsJson
+            .map((json) => TransactionModel.fromJson(json))
+            .toList();
+
+        // Sort server transactions by date (newest first) before saving
+        serverTransactions.sort((a, b) => b.date.compareTo(a.date));
+
+        await dbHelper.clearAllTransactions();
+        for (var transaction in serverTransactions) {
+          await dbHelper.insertTransaction(transaction);
+        }
+
+        _lastSyncTime = DateTime.now();
+      }
     } catch (e) {
-      return await dbHelper.getAllTransactions();
+      print('Error during sync: $e');
+      throw Exception('Failed to sync with server');
     }
   }
 
@@ -51,6 +72,8 @@ class TransactionController {
     required double amount,
     required String category,
   }) async {
+    late TransactionModel transaction;
+
     try {
       if (await hasInternetConnection()) {
         final response = await http.post(
@@ -68,13 +91,24 @@ class TransactionController {
         );
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          final transaction = TransactionModel.fromJson(json.decode(response.body));
-          await dbHelper.insertTransaction(transaction);
-          return transaction;
+          transaction = TransactionModel.fromJson(json.decode(response.body));
+        } else {
+          throw Exception('Server error');
         }
+      } else {
+        transaction = TransactionModel(
+          id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+          type: type,
+          amount: amount,
+          category: category,
+          date: DateTime.now(),
+        );
       }
-      throw Exception('Failed to add transaction');
+
+      await dbHelper.insertTransaction(transaction);
+      return transaction;
     } catch (e) {
+      print('Error in addTransaction: $e');
       throw Exception('Failed to add transaction: $e');
     }
   }
@@ -86,8 +120,11 @@ class TransactionController {
     required String category,
     required DateTime date,
   }) async {
+    late TransactionModel transaction;
+
     try {
       if (await hasInternetConnection()) {
+        // Try online first
         final response = await http.put(
           Uri.parse('${ApiConstants.baseUrl}/edittransactions/$id'),
           headers: {
@@ -103,37 +140,56 @@ class TransactionController {
         );
 
         if (response.statusCode == 200) {
-          final transaction = TransactionModel.fromJson(json.decode(response.body));
-          await dbHelper.updateTransaction(transaction);
-          return transaction;
+          transaction = TransactionModel.fromJson(json.decode(response.body));
+          await syncWithServer(); // Full sync after successful edit
+        } else {
+          throw Exception('Server error');
         }
+      } else {
+        // Offline fallback
+        transaction = TransactionModel(
+          id: id,
+          type: type,
+          amount: amount,
+          category: category,
+          date: date,
+        );
       }
-      throw Exception('Failed to update transaction');
+
+      // Update local DB
+      await dbHelper.updateTransaction(transaction);
+      return transaction;
     } catch (e) {
+      print('Error in editTransaction: $e');
       throw Exception('Failed to update transaction: $e');
     }
   }
 
   Future<void> deleteTransaction(String id) async {
     try {
+      // Delete from local DB first
+      await dbHelper.deleteTransaction(id);
+
       if (await hasInternetConnection()) {
+        // Then try to delete from server
         final response = await http.delete(
           Uri.parse('${ApiConstants.baseUrl}/deletetransactions/$id'),
           headers: {'Authorization': 'Bearer $token'},
         );
 
         if (response.statusCode == 200) {
-          await dbHelper.deleteTransaction(id);
-          return;
+          await syncWithServer(); // Full sync after successful delete
+        } else {
+          // If server delete fails, restore the local deletion
+          throw Exception('Server error');
         }
       }
-      throw Exception('Failed to delete transaction');
     } catch (e) {
+      print('Error in deleteTransaction: $e');
       throw Exception('Failed to delete transaction: $e');
     }
   }
 
-  // Add confirmation before delete
   Future<bool> confirmDelete(BuildContext context) async {
     return await showDialog(
       context: context,
@@ -155,7 +211,4 @@ class TransactionController {
       },
     ) ?? false;
   }
-
-
-
 }
