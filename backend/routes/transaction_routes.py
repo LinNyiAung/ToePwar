@@ -69,7 +69,7 @@ def update_goals_for_expense(user_id: str, amount: float):
     goals = goals_collection.find({
         "user_id": user_id,
         "completed": {"$ne": True}
-    }).sort("deadline", -1)  # Start with the least priority goal
+    }).sort("deadline", -1)
 
     for goal in goals:
         current_amount = goal["current_amount"]
@@ -86,6 +86,24 @@ def update_goals_for_expense(user_id: str, amount: float):
                 {"$set": {"current_amount": 0}}
             )
             remaining_decrement -= current_amount
+
+
+def revert_transaction_impact(transaction: dict):
+    """Reverse the impact of a transaction on goals before updating/deleting it"""
+    if transaction["type"] == "income":
+        # For income, we need to decrease goal amounts
+        update_goals_for_expense(transaction["user_id"], transaction["amount"])
+    else:
+        # For expense, we need to increase goal amounts
+        update_goals_for_income(transaction["user_id"], transaction["amount"])
+
+def apply_new_transaction_impact(transaction_data: dict):
+    """Apply the impact of a new or updated transaction on goals"""
+    if transaction_data["type"] == "income":
+        update_goals_for_income(transaction_data["user_id"], transaction_data["amount"])
+    else:
+        update_goals_for_expense(transaction_data["user_id"], transaction_data["amount"])
+
 
 def update_goals_from_balance(user_id: str):
     # Get current balance
@@ -137,12 +155,7 @@ def update_transaction(
     transaction: Transaction,
     user_id: str = Depends(get_current_user)
 ):
-    print(f"Received PUT request for transaction ID: {transaction_id}")
-    print(f"Transaction data: {transaction.dict()}")
-    print(f"User ID: {user_id}")
-    
     try:
-        # Convert string ID to ObjectId
         transaction_object_id = ObjectId(transaction_id)
         
         # Verify the transaction exists and belongs to the user
@@ -153,9 +166,12 @@ def update_transaction(
         
         if not existing_transaction:
             raise HTTPException(
-                status_code=404, 
+                status_code=404,
                 detail=f"Transaction {transaction_id} not found for user {user_id}"
             )
+        
+        # First, revert the impact of the old transaction
+        revert_transaction_impact(existing_transaction)
         
         # Update the transaction
         update_data = transaction.dict()
@@ -167,10 +183,15 @@ def update_transaction(
         )
         
         if result.modified_count == 0:
+            # If update failed, reapply old transaction impact
+            apply_new_transaction_impact(existing_transaction)
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="Transaction update failed - no modifications made"
             )
+        
+        # Apply the impact of the new transaction
+        apply_new_transaction_impact(update_data)
         
         # Return the updated transaction
         updated_transaction = transactions_collection.find_one({"_id": transaction_object_id})
@@ -178,13 +199,13 @@ def update_transaction(
         
     except InvalidId:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Invalid transaction ID format: {transaction_id}"
         )
     except Exception as e:
         print(f"Error updating transaction: {str(e)}")
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Failed to update transaction: {str(e)}"
         )
 
@@ -202,7 +223,7 @@ def delete_transaction(transaction_id: str, user_id: str = Depends(get_current_u
     try:
         transaction_object_id = ObjectId(transaction_id)
         
-        # Get transaction type before deletion
+        # Get transaction before deletion
         transaction = transactions_collection.find_one({
             "_id": transaction_object_id,
             "user_id": user_id
@@ -210,9 +231,12 @@ def delete_transaction(transaction_id: str, user_id: str = Depends(get_current_u
         
         if not transaction:
             raise HTTPException(
-                status_code=404, 
+                status_code=404,
                 detail=f"Transaction {transaction_id} not found for user {user_id}"
             )
+        
+        # Revert the impact of the transaction before deletion
+        revert_transaction_impact(transaction)
         
         # Delete the transaction
         result = transactions_collection.delete_one({
@@ -220,21 +244,25 @@ def delete_transaction(transaction_id: str, user_id: str = Depends(get_current_u
             "user_id": user_id
         })
         
-        # Update goals after deletion
-        if transaction["type"] == "income":
-            update_goals_from_balance(user_id)
+        if result.deleted_count == 0:
+            # If deletion failed, reapply transaction impact
+            apply_new_transaction_impact(transaction)
+            raise HTTPException(
+                status_code=400,
+                detail="Transaction deletion failed"
+            )
         
         return {"message": "Transaction deleted successfully"}
         
     except InvalidId:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Invalid transaction ID format: {transaction_id}"
         )
     except Exception as e:
         print(f"Error deleting transaction: {str(e)}")
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Failed to delete transaction: {str(e)}"
         )
     
