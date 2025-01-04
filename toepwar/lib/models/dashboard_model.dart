@@ -5,7 +5,7 @@ class Dashboard {
   final double totalIncome;
   final double totalExpense;
   final double balance;
-  final List<TransactionModel> recentTransactions;
+  final List<Transaction> recentTransactions;
   final List<Goal> recentGoals;  // Added recentGoals
 
   Dashboard({
@@ -30,11 +30,11 @@ class Dashboard {
       return 0.0;
     }
 
-    List<TransactionModel> transactions = [];
+    List<Transaction> transactions = [];
     if (json['recent_transactions'] != null) {
       try {
         transactions = (json['recent_transactions'] as List)
-            .map((transaction) => TransactionModel.fromJson(transaction))
+            .map((transaction) => Transaction.fromJson(transaction))
             .toList();
       } catch (e) {
         print('Error parsing transactions: $e');

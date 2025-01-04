@@ -48,7 +48,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
     }
   }
 
-  Future<void> _editTransaction(TransactionModel transaction) async {
+  Future<void> _editTransaction(Transaction transaction) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -96,7 +96,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
         token: widget.token,
         onTransactionChanged: widget.onTransactionChanged,
       ),
-      body: FutureBuilder<List<TransactionModel>>(
+      body: FutureBuilder<List<Transaction>>(
         future: _transactionController.getTransactions(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting ||

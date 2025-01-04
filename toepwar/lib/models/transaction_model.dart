@@ -1,11 +1,11 @@
-class TransactionModel {  // Changed from Transaction to TransactionModel
+class Transaction {
   final String id;
   final String type;
   final double amount;
   final String category;
   final DateTime date;
 
-  TransactionModel({
+  Transaction({
     required this.id,
     required this.type,
     required this.amount,
@@ -40,10 +40,11 @@ class TransactionModel {  // Changed from Transaction to TransactionModel
     return DateTime.now();
   }
 
-  factory TransactionModel.fromJson(Map<String, dynamic> json) {
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    // Handle both '_id' and 'id' cases
     String transactionId = json['_id']?.toString() ?? json['id']?.toString() ?? '';
 
-    return TransactionModel(
+    return Transaction(
       id: transactionId,
       type: json['type']?.toString() ?? '',
       amount: _parseDouble(json['amount']),

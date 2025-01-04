@@ -4,7 +4,7 @@ import '../../../controllers/transaction_controller.dart';
 import '../../../models/transaction_model.dart';
 
 class TransactionListItem extends StatelessWidget {
-  final TransactionModel transaction;
+  final Transaction transaction;
   final Function? onDelete;
   final Function? onEdit;
 

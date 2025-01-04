@@ -7,7 +7,7 @@ import '../../utils/api_constants.dart';
 
 class EditTransactionView extends StatefulWidget {
   final String token;
-  final TransactionModel transaction;
+  final Transaction transaction;
   final VoidCallback onTransactionChanged;
 
   EditTransactionView({
