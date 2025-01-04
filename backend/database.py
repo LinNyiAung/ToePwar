@@ -9,6 +9,7 @@ db = client["toepwar"]
 users_collection = db["users"]
 transactions_collection = db["transactions"]
 goals_collection = db["goals"]
+admins_collection = db["admins"]
 
 # Send a ping to confirm a successful connection
 try:

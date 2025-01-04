@@ -1,5 +1,7 @@
 from io import BytesIO
+from bson import ObjectId
 from fastapi import HTTPException, Depends
+from grpc import Status
 from jose import jwt, JWTError
 from auth import SECRET_KEY, ALGORITHM
 from fastapi.security import OAuth2PasswordBearer
@@ -12,6 +14,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.units import inch
+from database import users_collection, admins_collection
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -265,3 +268,13 @@ def create_financial_report_pdf(report_data):
     doc.build(story)
     buffer.seek(0)
     return buffer
+
+
+async def get_current_admin(current_user: str = Depends(get_current_user)):
+    user = admins_collection.find_one({"_id": ObjectId(current_user)})
+    if not user or user.get("role") != "admin":
+        raise HTTPException(
+            status_code=Status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user

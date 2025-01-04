@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from auth import hash_password, verify_password, create_access_token
 from database import users_collection
@@ -12,11 +13,14 @@ def register(user: UserSignUp):
     if users_collection.find_one({"username": user.username}):
         raise HTTPException(status_code=400, detail="Username already taken")
     hashed_password = hash_password(user.password)
-    users_collection.insert_one({
+    user_data = {
         "username": user.username,
         "email": user.email,
-        "password": hashed_password
-    })
+        "password": hashed_password,
+        "status": "active",
+        "created_at": datetime.utcnow()
+    }
+    users_collection.insert_one(user_data)
     return {"message": "User registered successfully"}
 
 @router.post("/login", response_model=Token)
