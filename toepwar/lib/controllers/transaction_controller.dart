@@ -85,11 +85,11 @@ class TransactionController {
 
       print('Edit URL: ${ApiConstants.baseUrl}/edittransactions/$id');
       print('Edit Request Body: ${json.encode({
-            'type': type,
-            'amount': amount,
-            'category': category,
-            'date': date.toIso8601String(),
-          })}');
+        'type': type,
+        'amount': amount,
+        'category': category,
+        'date': date.toIso8601String(),
+      })}');
 
       if (response.statusCode == 200) {
         print('Response: ${response.statusCode} - ${response.body}');
@@ -109,25 +109,25 @@ class TransactionController {
   // Add confirmation before delete
   Future<bool> confirmDelete(BuildContext context) async {
     return await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Confirm Delete'),
-              content:
-                  Text('Are you sure you want to delete this transaction?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text('Delete', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            );
-          },
-        ) ??
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Delete'),
+          content:
+          Text('Are you sure you want to delete this transaction?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ??
         false;
   }
 

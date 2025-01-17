@@ -368,7 +368,13 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
             ),
             SizedBox(height: 16),
             ...categoryBudgets.entries.map((entry) {
-              final percentage = (entry.value / totalBudget * 100).toStringAsFixed(1);
+              // Ensure widthFactor is between 0 and 1
+              final widthFactor = totalBudget > 0 ?
+              (entry.value / totalBudget).clamp(0.0, 1.0) : 0.0;
+
+              final percentage = totalBudget > 0 ?
+              (entry.value / totalBudget * 100).toStringAsFixed(1) : '0.0';
+
               return Padding(
                 padding: EdgeInsets.only(bottom: 16),
                 child: Column(
@@ -395,7 +401,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
                           ),
                         ),
                         FractionallySizedBox(
-                          widthFactor: entry.value / totalBudget,
+                          widthFactor: widthFactor,
                           child: Container(
                             height: 8,
                             decoration: BoxDecoration(

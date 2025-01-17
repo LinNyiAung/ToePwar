@@ -37,7 +37,7 @@ class _GoalsViewState extends State<GoalsView> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text('Saving Goals', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text('Financial Goals', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),

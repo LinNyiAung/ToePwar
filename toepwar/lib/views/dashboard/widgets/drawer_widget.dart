@@ -270,7 +270,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.savings,
-                    title: 'Saving Goals',
+                    title: 'Financial Goals',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(

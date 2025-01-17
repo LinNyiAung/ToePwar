@@ -85,7 +85,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  '[Amount] [Currency] + [Category]',
+                  '[Amount] + [Category]',
                   style: TextStyle(fontFamily: 'monospace'),
                 ),
                 Divider(height: 24),
@@ -94,10 +94,10 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                _buildExamplePhrase('💰 "1000 dollars salary"'),
-                _buildExamplePhrase('🛒 "50 dollars groceries"'),
-                _buildExamplePhrase('🚗 "30 dollars taxi"'),
-                _buildExamplePhrase('🍽️ "100 dollars dinning out"'),
+                _buildExamplePhrase('💰 "1000 salary"'),
+                _buildExamplePhrase('🛒 "50 groceries"'),
+                _buildExamplePhrase('🚗 "30 taxi"'),
+                _buildExamplePhrase('🍽️ "100 dinning out"'),
                 SizedBox(height: 16),
                 Text(
                   'Tips:',
