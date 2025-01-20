@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
+import '../../helpers/forecast_section_config.dart';
 import '../../utils/api_constants.dart';
 import '../dashboard/widgets/drawer_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -20,11 +21,14 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   Map<String, dynamic>? _forecastData;
   bool _isLoading = false;
   int _forecastMonths = 6;
+  bool _isEditMode = false;
+  late Future<List<ForecastSectionConfig>> _sectionsFuture;
 
 
   @override
   void initState() {
     super.initState();
+    _sectionsFuture = ForecastSectionManager.loadSections();
     _fetchForecast();
   }
 
@@ -54,6 +58,37 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   }
 
 
+  Widget _buildSection(ForecastSection section) {
+    if (_forecastData == null) return const SizedBox.shrink();
+
+    switch (section) {
+      case ForecastSection.timeRange:
+        return _buildTimeRangeSelector();
+      case ForecastSection.summary:
+        return _buildSummaryCards();
+      case ForecastSection.forecastTrend:
+        return _buildForecastChart();
+      case ForecastSection.categoryForecasts:
+        return _buildCategoryForecasts();
+      case ForecastSection.insights:
+        return _buildInsightsAndRecommendations();
+      case ForecastSection.goalProjections:
+        return _buildGoalProjections();
+    }
+  }
+
+  Future<void> _reorderSections(int oldIndex, int newIndex, List<ForecastSectionConfig> sections) async {
+    if (!_isEditMode) return;
+
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      final item = sections.removeAt(oldIndex);
+      sections.insert(newIndex, item);
+    });
+    await ForecastSectionManager.saveSections(sections);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +97,28 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text('Financial Forecast', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text('Financial Forecast',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
+          IconButton(
+            icon: Icon(
+              _isEditMode ? Icons.check : Icons.edit,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _isEditMode = !_isEditMode;
+              });
+              if (!_isEditMode) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Section order saved'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _fetchForecast,
@@ -76,9 +131,85 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : _forecastData == null
-          ? Center(child: Text('No forecast data available'))
-          : _buildForecastContent(),
+          : FutureBuilder<List<ForecastSectionConfig>>(
+        future: _sectionsFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          final sections = snapshot.data!;
+
+          return CustomScrollView(
+            slivers: [
+              if (_isEditMode)
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.info_outline, size: 16),
+                        SizedBox(width: 8),
+                        Text('Drag sections to reorder'),
+                      ],
+                    ),
+                  ),
+                ),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverReorderableList(
+                  itemCount: sections.length,
+                  itemBuilder: (context, index) {
+                    final section = sections[index];
+                    return ReorderableDragStartListener(
+                      key: Key(section.section.toString()),
+                      index: index,
+                      enabled: _isEditMode,
+                      child: Column(
+                        children: [
+                          Stack(
+                            children: [
+                              _buildSection(section.section),
+                              if (_isEditMode)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).primaryColor.withOpacity(0.9),
+                                      borderRadius: BorderRadius.only(
+                                        bottomLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.drag_handle,
+                                      color: Colors.white,
+                                    ),
+                                    padding: EdgeInsets.all(8),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                        ],
+                      ),
+                    );
+                  },
+                  onReorder: (oldIndex, newIndex) =>
+                      _reorderSections(oldIndex, newIndex, sections),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -112,57 +243,60 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Forecast Period',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(
-                '$_forecastMonths months',
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.w500,
-                ),
+      child: Material(  // Added Material widget here
+        color: Colors.transparent,  // Make it transparent to keep your existing styling
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Forecast Period',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
               ),
-              const Spacer(),
-              Text(
-                '(1-24 months)',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  '$_forecastMonths months',
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
+                const Spacer(),
+                Text(
+                  '(1-24 months)',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: Theme.of(context).primaryColor,
+                inactiveTrackColor: Colors.grey[200],
+                thumbColor: Theme.of(context).primaryColor,
+                overlayColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                trackHeight: 4,
               ),
-            ],
-          ),
-          SliderTheme(
-            data: SliderThemeData(
-              activeTrackColor: Theme.of(context).primaryColor,
-              inactiveTrackColor: Colors.grey[200],
-              thumbColor: Theme.of(context).primaryColor,
-              overlayColor: Theme.of(context).primaryColor.withOpacity(0.1),
-              trackHeight: 4,
+              child: Slider(
+                value: _forecastMonths.toDouble(),
+                min: 1,
+                max: 24,
+                divisions: 23,
+                label: '$_forecastMonths months',
+                onChanged: (value) {
+                  setState(() => _forecastMonths = value.round());
+                },
+                onChangeEnd: (value) => _fetchForecast(),
+              ),
             ),
-            child: Slider(
-              value: _forecastMonths.toDouble(),
-              min: 1,
-              max: 24,
-              divisions: 23,
-              label: '$_forecastMonths months',
-              onChanged: (value) {
-                setState(() => _forecastMonths = value.round());
-              },
-              onChangeEnd: (value) => _fetchForecast(),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
