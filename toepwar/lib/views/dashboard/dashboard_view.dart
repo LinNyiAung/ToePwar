@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:toepwar/views/dashboard/widgets/drawer_widget.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../helpers/section_config.dart';
 import '../../models/dashboard_model.dart';
 import '../../models/goal_model.dart';
 import '../../models/transaction_model.dart';
@@ -27,6 +28,8 @@ class _DashboardViewState extends State<DashboardView> {
   late final DashboardController _dashboardController;
   late Future<List<Transaction>> _recentTransactions;
   late Future<Dashboard> _dashboardData;
+  late Future<List<SectionConfig>> _sectionsFuture;
+  bool _isEditMode = false;
 
   @override
   void initState() {
@@ -34,6 +37,68 @@ class _DashboardViewState extends State<DashboardView> {
     _dashboardController = DashboardController(token: widget.token);
     _recentTransactions = _dashboardController.getRecentTransactions();
     _dashboardData = _dashboardController.getDashboardData();
+    _sectionsFuture = DashboardSectionManager.loadSections();
+  }
+
+  Widget _buildSection(DashboardSection section, Dashboard dashboard, List<Transaction> transactions) {
+    return Container(
+      key: Key(section.toString()),
+      child: Stack(
+        children: [
+          // The actual section content
+          _buildSectionContent(section, dashboard, transactions),
+
+          // Edit mode overlay
+          if (_isEditMode)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.9),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(8),
+                    topRight: Radius.circular(8),
+                  ),
+                ),
+                child: Icon(
+                  Icons.drag_handle,
+                  color: Colors.white,
+                ),
+                padding: EdgeInsets.all(8),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionContent(DashboardSection section, Dashboard dashboard, List<Transaction> transactions) {
+    switch (section) {
+      case DashboardSection.recentTransactions:
+        return _buildRecentTransactions(transactions);
+      case DashboardSection.recentGoals:
+        return _buildRecentGoals(dashboard.recentGoals);
+      case DashboardSection.balanceTrend:
+        return BalanceTrendChart(token: widget.token);
+      case DashboardSection.expenseStructure:
+        return ExpensePieChart(token: widget.token);
+      case DashboardSection.incomeStructure:
+        return IncomePieChart(token: widget.token);
+    }
+  }
+
+  Future<void> _reorderSections(int oldIndex, int newIndex, List<SectionConfig> sections) async {
+    if (!_isEditMode) return;  // Prevent reordering when not in edit mode
+
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      final item = sections.removeAt(oldIndex);
+      sections.insert(newIndex, item);
+    });
+    await DashboardSectionManager.saveSections(sections);
   }
 
   Future<void> _refreshDashboard() async {
@@ -55,6 +120,26 @@ class _DashboardViewState extends State<DashboardView> {
         ),
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
+          // Edit mode toggle button
+          IconButton(
+            icon: Icon(
+              _isEditMode ? Icons.check : Icons.edit,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _isEditMode = !_isEditMode;
+              });
+              if (!_isEditMode) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Section order saved'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.white),
             onPressed: _refreshDashboard,
@@ -68,7 +153,7 @@ class _DashboardViewState extends State<DashboardView> {
       body: RefreshIndicator(
         onRefresh: _refreshDashboard,
         child: FutureBuilder<List<dynamic>>(
-          future: Future.wait([_dashboardData, _recentTransactions]),
+          future: Future.wait([_dashboardData, _recentTransactions, _sectionsFuture]),
           builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
@@ -78,14 +163,78 @@ class _DashboardViewState extends State<DashboardView> {
               return _buildErrorView(snapshot.error);
             }
 
-            if (!snapshot.hasData) {
-              return Center(child: Text('No data available'));
-            }
-
             final dashboard = snapshot.data![0] as Dashboard;
             final transactions = snapshot.data![1] as List<Transaction>;
+            final sections = snapshot.data![2] as List<SectionConfig>;
 
-            return _buildDashboardContent(dashboard, transactions);
+            return CustomScrollView(
+              slivers: [
+                // Fixed Financial Overview Section
+                SliverToBoxAdapter(
+                  child: Container(
+                    color: Theme.of(context).primaryColor,
+                    child: Column(
+                      children: [
+                        _buildSummaryCards(dashboard),
+                        Container(
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(24),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Edit mode indicator
+                if (_isEditMode)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline, size: 16),
+                          SizedBox(width: 8),
+                          Text('Drag sections to reorder'),
+                        ],
+                      ),
+                    ),
+                  ),
+                // Reorderable Sections
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverReorderableList(
+                    itemCount: sections.length,
+                    itemBuilder: (context, index) {
+                      final section = sections[index];
+                      return ReorderableDragStartListener(
+                        key: Key(section.section.toString()),
+                        index: index,
+                        enabled: _isEditMode,  // Only enable drag when in edit mode
+                        child: Column(
+                          children: [
+                            _buildSection(section.section, dashboard, transactions),
+                            SizedBox(height: 24),
+                          ],
+                        ),
+                      );
+                    },
+                    onReorder: (oldIndex, newIndex) =>
+                        _reorderSections(oldIndex, newIndex, sections),
+                  ),
+                ),
+              ],
+            );
           },
         ),
       ),
@@ -94,7 +243,10 @@ class _DashboardViewState extends State<DashboardView> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddTransactionView(token: widget.token, onTransactionChanged: _refreshDashboard,),
+              builder: (context) => AddTransactionView(
+                token: widget.token,
+                onTransactionChanged: _refreshDashboard,
+              ),
             ),
           );
           if (result == true) {
