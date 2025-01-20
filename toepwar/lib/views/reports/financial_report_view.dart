@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import '../../helpers/report_section_config.dart';
 import '../../utils/api_constants.dart';
 import '../charts/balance_trend.dart';
 import '../dashboard/widgets/drawer_widget.dart';
@@ -24,10 +25,13 @@ class _FinancialReportViewState extends State<FinancialReportView> {
   DateTime _endDate = DateTime.now();
   Map<String, dynamic>? _reportData;
   bool _isLoading = false;
+  bool _isEditMode = false;
+  late Future<List<ReportSectionConfig>> _sectionsFuture;
 
   @override
   void initState() {
     super.initState();
+    _sectionsFuture = ReportSectionManager.loadSections();
     _fetchReport();
   }
 
@@ -60,6 +64,46 @@ class _FinancialReportViewState extends State<FinancialReportView> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildSection(ReportSection section) {
+    if (_reportData == null) return const SizedBox.shrink();
+
+    switch (section) {
+      case ReportSection.summary:
+        return _buildSummaryCards(_reportData!['summary'], NumberFormat.currency(symbol: 'K'));
+      case ReportSection.incomeCategory:
+        return _buildCategoryBreakdown(
+          'Income by Category',
+          _reportData!['income_by_category'],
+          Colors.green.shade100,
+          Colors.green,
+        );
+      case ReportSection.expenseCategory:
+        return _buildCategoryBreakdown(
+          'Expense by Category',
+          _reportData!['expense_by_category'],
+          Colors.red.shade100,
+          Colors.red,
+        );
+      case ReportSection.goalsProgress:
+        return _buildGoalsProgress();
+      case ReportSection.balanceTrend:
+        return BalanceTrendChart(token: widget.token);
+    }
+  }
+
+  Future<void> _reorderSections(int oldIndex, int newIndex, List<ReportSectionConfig> sections) async {
+    if (!_isEditMode) return;
+
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      final item = sections.removeAt(oldIndex);
+      sections.insert(newIndex, item);
+    });
+    await ReportSectionManager.saveSections(sections);
   }
 
 
@@ -159,9 +203,85 @@ class _FinancialReportViewState extends State<FinancialReportView> {
       drawer: DrawerWidget(token: widget.token, onTransactionChanged: () {}),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _reportData == null
-          ? _buildNoDataView()
-          : _buildReport(),
+          : FutureBuilder<List<ReportSectionConfig>>(
+        future: _sectionsFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final sections = snapshot.data!;
+
+          return CustomScrollView(
+            slivers: [
+              if (_isEditMode)
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.info_outline, size: 16),
+                        SizedBox(width: 8),
+                        Text('Drag sections to reorder'),
+                      ],
+                    ),
+                  ),
+                ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverReorderableList(
+                  itemCount: sections.length,
+                  itemBuilder: (context, index) {
+                    final section = sections[index];
+                    return ReorderableDragStartListener(
+                      key: Key(section.section.toString()),
+                      index: index,
+                      enabled: _isEditMode,
+                      child: Column(
+                        children: [
+                          Stack(
+                            children: [
+                              _buildSection(section.section),
+                              if (_isEditMode)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).primaryColor.withOpacity(0.9),
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.drag_handle,
+                                      color: Colors.white,
+                                    ),
+                                    padding: const EdgeInsets.all(8),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    );
+                  },
+                  onReorder: (oldIndex, newIndex) =>
+                      _reorderSections(oldIndex, newIndex, sections),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -193,6 +313,25 @@ class _FinancialReportViewState extends State<FinancialReportView> {
               ),
             ),
           ),
+        IconButton(
+          icon: Icon(
+            _isEditMode ? Icons.check : Icons.edit,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            setState(() {
+              _isEditMode = !_isEditMode;
+            });
+            if (!_isEditMode) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Section order saved'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+        ),
         IconButton(
           icon: const Icon(Icons.calendar_today, color: Colors.white),
           onPressed: _showDateRangePicker,
