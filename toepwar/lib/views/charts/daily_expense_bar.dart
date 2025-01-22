@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 
 class DailyExpenseChart extends StatefulWidget {
@@ -121,7 +122,7 @@ class _DailyExpenseChartState extends State<DailyExpenseChart> {
       ),
       child: DropdownButton<DateTime>(
         value: _selectedMonth,
-        hint: Text('Select Month'),
+        hint: Text(AppLocalizations.of(context).translate('selectMonth')),
         underline: Container(),
         items: _availableMonths.map((month) {
           return DropdownMenuItem<DateTime>(
@@ -146,12 +147,12 @@ class _DailyExpenseChartState extends State<DailyExpenseChart> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildStatCard(
-          'Monthly Total',
+          AppLocalizations.of(context).translate('monthlyTotal'),
           currencyFormat.format(_totalMonthlyExpense),
           Icons.calendar_month,
         ),
         _buildStatCard(
-          'Daily Average',
+          AppLocalizations.of(context).translate('dailyAverage'),
           currencyFormat.format(_averageDailyExpense),
           Icons.show_chart,
         ),
@@ -216,11 +217,14 @@ class _DailyExpenseChartState extends State<DailyExpenseChart> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Daily Expenses',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).translate('dailyExpenses'),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 _buildMonthDropdown(),
@@ -238,7 +242,7 @@ class _DailyExpenseChartState extends State<DailyExpenseChart> {
                       Icon(Icons.show_chart, size: 48, color: Colors.grey),
                       SizedBox(height: 16),
                       Text(
-                        'No expense data available for selected month',
+                        AppLocalizations.of(context).translate('noExpenseData'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade700,

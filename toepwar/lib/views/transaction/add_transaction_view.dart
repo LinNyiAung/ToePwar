@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../helpers/receipt_scanner.dart';
 import '../../helpers/voice_transaction_handler.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -54,7 +55,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not extract amount from receipt')),
+          SnackBar(content: Text(AppLocalizations.of(context).translate('couldNotExtractAmount'))),
         );
       }
     } catch (e) {
@@ -72,7 +73,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
       margin: EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
         leading: Icon(Icons.help_outline),
-        title: Text('Voice Input Guide'),
+        title: Text(AppLocalizations.of(context).translate('voiceInputGuide')),
         children: [
           Padding(
             padding: EdgeInsets.all(16),
@@ -80,7 +81,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Sentence Structure:',
+                  AppLocalizations.of(context).translate('sentenceStructure'),
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
@@ -90,7 +91,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                 ),
                 Divider(height: 24),
                 Text(
-                  'Example Phrases:',
+                  AppLocalizations.of(context).translate('examplePhrases'),
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
@@ -100,14 +101,14 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                 _buildExamplePhrase('🍽️ "100 dinning out"'),
                 SizedBox(height: 16),
                 Text(
-                  'Tips:',
+                  AppLocalizations.of(context).translate('tips'),
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                _buildTip('• Speak clearly and at a normal pace'),
-                _buildTip('• Include the amount and category'),
-                _buildTip('• Wait for the blue microphone indicator'),
-                _buildTip('• You can edit details after voice input'),
+                _buildTip(AppLocalizations.of(context).translate('speakClearly')),
+                _buildTip(AppLocalizations.of(context).translate('includeAmountCategory')),
+                _buildTip(AppLocalizations.of(context).translate('waitForIndicator')),
+                _buildTip(AppLocalizations.of(context).translate('editAfterVoice')),
               ],
             ),
           ),
@@ -165,7 +166,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not understand voice input. Please try again.')),
+          SnackBar(content: Text(AppLocalizations.of(context).translate('couldNotUnderstandVoice'))),
         );
       }
     } catch (e) {
@@ -217,7 +218,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Quick Input',
+              AppLocalizations.of(context).translate('quickInput'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -230,7 +231,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                 Expanded(
                   child: _buildQuickInputButton(
                     icon: Icons.camera_alt,
-                    label: 'Camera',
+                    label: AppLocalizations.of(context).translate('camera'),
                     onTap: () => _scanReceipt(ImageSource.camera),
                     color: Colors.blue,
                   ),
@@ -239,7 +240,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                 Expanded(
                   child: _buildQuickInputButton(
                     icon: Icons.photo_library,
-                    label: 'Gallery',
+                    label: AppLocalizations.of(context).translate('gallery'),
                     onTap: () => _scanReceipt(ImageSource.gallery),
                     color: Colors.green,
                   ),
@@ -305,7 +306,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
               ),
               SizedBox(width: 12),
               Text(
-                _isListening ? 'Listening...' : 'Voice Input',
+                _isListening ? AppLocalizations.of(context).translate('listening') : AppLocalizations.of(context).translate('voiceInput'),
                 style: TextStyle(
                   color: _isListening ? Colors.red : Colors.purple,
                   fontWeight: FontWeight.w600,
@@ -330,7 +331,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Transaction Type',
+            AppLocalizations.of(context).translate('transactionType'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -342,7 +343,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
               children: [
                 Expanded(
                   child: _buildTypeButton(
-                    label: 'Income',
+                    label: AppLocalizations.of(context).translate('income'),
                     isSelected: _selectedType == 'income',
                     onTap: () => setState(() => _selectedType = 'income'),
                     color: Colors.green,
@@ -351,7 +352,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                 SizedBox(width: 12),
                 Expanded(
                   child: _buildTypeButton(
-                    label: 'Expense',
+                    label: AppLocalizations.of(context).translate('expense'),
                     isSelected: _selectedType == 'expense',
                     onTap: () => setState(() => _selectedType = 'expense'),
                     color: Colors.red,
@@ -417,7 +418,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Transaction Details',
+              AppLocalizations.of(context).translate('transactionDetails'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -428,7 +429,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
             TextField(
               controller: _amountController,
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: AppLocalizations.of(context).translate('amount'),
                 prefixIcon: Icon(Icons.attach_money),
               ),
               keyboardType: TextInputType.number,
@@ -437,7 +438,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
             DropdownButtonFormField<String>(
               value: _selectedMainCategory,
               decoration: InputDecoration(
-                labelText: 'Category',
+                labelText: AppLocalizations.of(context).translate('category'),
                 prefixIcon: Icon(Icons.category),
               ),
               items: categoriesMap.keys.map((category) {
@@ -461,7 +462,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
               DropdownButtonFormField<String>(
                 value: _selectedSubCategory,
                 decoration: InputDecoration(
-                  labelText: 'Subcategory',
+                  labelText: AppLocalizations.of(context).translate('subcategory'),
                   prefixIcon: Icon(Icons.subject),
                 ),
                 items: categoriesMap[_selectedMainCategory]!.map((subcategory) {
@@ -492,7 +493,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
-        title: Text('Add Transaction', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(AppLocalizations.of(context).translate('addTransaction'), style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(

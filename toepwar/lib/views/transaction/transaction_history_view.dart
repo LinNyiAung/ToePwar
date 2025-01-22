@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:toepwar/views/transaction/transaction_filter.dart';
 
 import '../../controllers/transaction_controller.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/transaction_model.dart';
 import '../dashboard/widgets/drawer_widget.dart';
 import '../dashboard/widgets/transaction_list_item.dart';
@@ -71,7 +72,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
-        title: Text('Transaction History', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
+        title: Text(AppLocalizations.of(context).translate('transactionHistory'), style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -113,7 +114,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
           final transactions = snapshot.data!;
           if (transactions.isEmpty) {
             return Center(
-              child: Text('No transactions found'),
+              child: Text(AppLocalizations.of(context).translate('noTransactions')),
             );
           }
 
@@ -122,7 +123,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
               .toList();
 
           if (filteredTransactions.isEmpty) {
-            return Center(child: Text('No transactions match the filter'));
+            return Center(child: Text(AppLocalizations.of(context).translate('noMatchingTransactions')));
           }
 
           return ListView.builder(

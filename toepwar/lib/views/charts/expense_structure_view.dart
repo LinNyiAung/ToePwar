@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:toepwar/views/charts/daily_expense_bar.dart';
 import '../../helpers/expense_section_config.dart';
+import '../../l10n/app_localizations.dart';
 import 'expense_structure_pie.dart';
 import 'monthly_expense_bar.dart';
 import '../dashboard/widgets/drawer_widget.dart';
@@ -70,7 +71,7 @@ class _ExpenseStructureViewState extends State<ExpenseStructureView> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
-        title: Text('Expense Charts',
+        title: Text(AppLocalizations.of(context).translate('expenseCharts'),
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
@@ -85,8 +86,8 @@ class _ExpenseStructureViewState extends State<ExpenseStructureView> {
               });
               if (!_isEditMode) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Section order saved'),
+                   SnackBar(
+                    content: Text(AppLocalizations.of(context).translate('sectionOrderSaved')),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -123,12 +124,12 @@ class _ExpenseStructureViewState extends State<ExpenseStructureView> {
                       color: Theme.of(context).primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child:  Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.info_outline, size: 16),
                         SizedBox(width: 8),
-                        Text('Drag sections to reorder'),
+                        Text(AppLocalizations.of(context).translate('dragSectionsToReorder')),
                       ],
                     ),
                   ),

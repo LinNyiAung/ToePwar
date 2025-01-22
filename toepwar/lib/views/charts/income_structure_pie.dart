@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 
 class IncomePieChart extends StatefulWidget {
@@ -105,7 +106,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
             _selectedDateRange != null
                 ? '${DateFormat('MMM d, y').format(_selectedDateRange!.start)} - '
                 '${DateFormat('MMM d, y').format(_selectedDateRange!.end)}'
-                : 'All Time',
+                : AppLocalizations.of(context).translate('allTime'),
             style: TextStyle(fontSize: 14),
           ),
           Row(
@@ -113,7 +114,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
               IconButton(
                 icon: Icon(Icons.date_range),
                 onPressed: _showDateRangePicker,
-                tooltip: 'Select Date Range',
+                tooltip: AppLocalizations.of(context).translate('selectDateRange'),
               ),
               if (_selectedDateRange != null)
                 IconButton(
@@ -122,7 +123,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
                     setState(() => _selectedDateRange = null);
                     _fetchIncomeCategories();
                   },
-                  tooltip: 'Clear Date Filter',
+                  tooltip: AppLocalizations.of(context).translate('clearDateFilter'),
                 ),
             ],
           ),
@@ -189,7 +190,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
             children: [
               _buildDateRangeFilter(),
               SizedBox(height: 16),
-              Text('No income data available for selected period'),
+              Text(AppLocalizations.of(context).translate('noIncomeData')),
             ],
           ),
         ),
@@ -203,7 +204,7 @@ class _IncomePieChartState extends State<IncomePieChart> {
         children: [
           SizedBox(height: 20),
           Text(
-            'Income Distribution',
+            AppLocalizations.of(context).translate('incomeDistribution'),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,

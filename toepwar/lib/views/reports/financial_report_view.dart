@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../../helpers/report_section_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 import '../charts/balance_trend.dart';
 import '../dashboard/widgets/drawer_widget.dart';
@@ -74,14 +75,14 @@ class _FinancialReportViewState extends State<FinancialReportView> {
         return _buildSummaryCards(_reportData!['summary'], NumberFormat.currency(symbol: 'K'));
       case ReportSection.incomeCategory:
         return _buildCategoryBreakdown(
-          'Income by Category',
+          AppLocalizations.of(context).translate('incomeByCategoryTitle'),
           _reportData!['income_by_category'],
           Colors.green.shade100,
           Colors.green,
         );
       case ReportSection.expenseCategory:
         return _buildCategoryBreakdown(
-          'Expense by Category',
+          AppLocalizations.of(context).translate('expenseByCategoryTitle'),
           _reportData!['expense_by_category'],
           Colors.red.shade100,
           Colors.red,
@@ -223,12 +224,12 @@ class _FinancialReportViewState extends State<FinancialReportView> {
                       color: Theme.of(context).primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child:  Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.info_outline, size: 16),
                         SizedBox(width: 8),
-                        Text('Drag sections to reorder'),
+                        Text(AppLocalizations.of(context).translate('dragSectionsToReorder'),),
                       ],
                     ),
                   ),
@@ -290,8 +291,8 @@ class _FinancialReportViewState extends State<FinancialReportView> {
       elevation: 0,
       backgroundColor: Theme.of(context).primaryColor,
       iconTheme: IconThemeData(color: Colors.white),
-      title: const Text(
-        'Financial Report',
+      title:  Text(
+        AppLocalizations.of(context).translate('financialReport'),
         style: TextStyle(
           fontWeight: FontWeight.bold,
           color: Colors.white,
@@ -324,8 +325,8 @@ class _FinancialReportViewState extends State<FinancialReportView> {
             });
             if (!_isEditMode) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Section order saved'),
+                 SnackBar(
+                  content: Text(AppLocalizations.of(context).translate('sectionOrderSaved')),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -352,13 +353,13 @@ class _FinancialReportViewState extends State<FinancialReportView> {
             }
           },
           itemBuilder: (BuildContext context) => [
-            const PopupMenuItem<String>(
+             PopupMenuItem<String>(
               value: 'excel',
-              child: Text('Export as Excel'),
+              child: Text(AppLocalizations.of(context).translate('exportAsExcel')),
             ),
-            const PopupMenuItem<String>(
+             PopupMenuItem<String>(
               value: 'pdf',
-              child: Text('Export as PDF'),
+              child: Text(AppLocalizations.of(context).translate('exportAsPDF')),
             ),
           ],
         ),
@@ -382,7 +383,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No data available',
+            AppLocalizations.of(context).translate('noDataAvailable'),
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[600],
@@ -393,7 +394,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           ElevatedButton.icon(
             onPressed: _fetchReport,
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh'),
+            label:  Text(AppLocalizations.of(context).translate('refresh')),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -413,14 +414,14 @@ class _FinancialReportViewState extends State<FinancialReportView> {
         _buildSummaryCards(summary, currencyFormat),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(
-          'Income by Category',
+          AppLocalizations.of(context).translate('incomeByCategoryTitle'),
           _reportData!['income_by_category'],
           Colors.green.shade100,
           Colors.green,
         ),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(
-          'Expense by Category',
+          AppLocalizations.of(context).translate('expenseByCategoryTitle'),
           _reportData!['expense_by_category'],
           Colors.red.shade100,
           Colors.red,
@@ -440,21 +441,23 @@ class _FinancialReportViewState extends State<FinancialReportView> {
         scrollDirection: Axis.horizontal,
         children: [
           _buildSummaryCard(
-            'Total Income',
+            AppLocalizations.of(context).translate('totalIncome'),
             summary['total_income'],
             Icons.trending_up,
             Colors.green,
             format,
           ),
+          SizedBox(width: 16,),
           _buildSummaryCard(
-            'Total Expenses',
+            AppLocalizations.of(context).translate('totalExpense'),
             summary['total_expense'],
             Icons.trending_down,
             Colors.red,
             format,
           ),
+          SizedBox(width: 16,),
           _buildSummaryCard(
-            'Net Income',
+            AppLocalizations.of(context).translate('netIncome'),
             summary['net_income'],
             summary['net_income'] >= 0 ? Icons.account_balance : Icons.warning,
             summary['net_income'] >= 0 ? Colors.blue : Colors.orange,
@@ -474,7 +477,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
       ) {
     return Container(
       width: 180,
-      margin: const EdgeInsets.only(right: 16),
+
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -620,11 +623,11 @@ class _FinancialReportViewState extends State<FinancialReportView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Savings Goals',
+                  AppLocalizations.of(context).translate('savingsGoals'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -656,8 +659,8 @@ class _FinancialReportViewState extends State<FinancialReportView> {
                             color: Colors.green.shade100,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
-                            'Completed',
+                          child:  Text(
+                            AppLocalizations.of(context).translate('completed'),
                             style: TextStyle(
                               color: Colors.green,
                               fontSize: 12,

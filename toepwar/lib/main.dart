@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 import 'package:toepwar/splash_screen.dart';
+import 'controllers/language_controller.dart';
+import 'l10n/app_localizations.dart';
+
 
 import 'views/auth/login_view.dart';
 
@@ -16,47 +21,67 @@ class AppColors {
 }
 
 void main() {
-  runApp(FinancialApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => LanguageController(),
+      child: MyApp(),
+    ),
+  );
 }
 
-class FinancialApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Toe Pwar',
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        cardColor: AppColors.background,
+    return Consumer<LanguageController>(
+      builder: (context, languageController, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Toe Pwar',
+          locale: languageController.currentLocale,
+          supportedLocales: const [
+            Locale('en'),
+            Locale('my'),
+          ],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          theme: ThemeData(
+            primaryColor: AppColors.primary,
+            cardColor: AppColors.background,
 
-        scaffoldBackgroundColor: AppColors.grey,
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+            scaffoldBackgroundColor: AppColors.grey,
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                elevation: 0,
+              ),
             ),
-            elevation: 0,
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: AppColors.inputBackground,
+              labelStyle: TextStyle(color: AppColors.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: EdgeInsets.all(20),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+              ),
+            ),
           ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: AppColors.inputBackground,
-          labelStyle: TextStyle(color: AppColors.primary),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: EdgeInsets.all(20),
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary,
-          ),
-        ),
-      ),
-      home: SplashScreen(),
+          home: SplashScreen(),
+        );
+      },
     );
   }
-}
+  }

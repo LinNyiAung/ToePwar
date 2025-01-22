@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../controllers/goal_controller.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/goal_model.dart';
 import '../dashboard/widgets/drawer_widget.dart';
 
@@ -37,7 +38,7 @@ class _GoalsViewState extends State<GoalsView> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text('Financial Goals', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(AppLocalizations.of(context).translate('financialGoals'), style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -63,7 +64,7 @@ class _GoalsViewState extends State<GoalsView> {
           final goals = snapshot.data ?? [];
 
           if (goals.isEmpty) {
-            return Center(child: Text('No saving goals yet'));
+            return Center(child: Text(AppLocalizations.of(context).translate('noSavingGoals')));
           }
 
           return ListView.builder(
@@ -146,12 +147,12 @@ class _GoalsViewState extends State<GoalsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Deadline: ${_formatDate(goal.deadline)}',
+                AppLocalizations.of(context).translate('deadline') +': ${_formatDate(goal.deadline)}',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 if (goal.completed && goal.completionDate != null)
                   Text(
-                    'Completed: ${_formatDate(goal.completionDate!)}',
+                      AppLocalizations.of(context).translate('completed')+ ': ${_formatDate(goal.completionDate!)}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.green,
                     ),
@@ -173,7 +174,7 @@ class _GoalsViewState extends State<GoalsView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Goal'),
+        title: Text(AppLocalizations.of(context).translate('deleteGoal')),
         content: Text('Are you sure you want to delete "${goal.name}"?'),
         actions: [
           TextButton(
@@ -193,7 +194,7 @@ class _GoalsViewState extends State<GoalsView> {
         await _goalController.deleteGoal(goal.id);
         _refreshGoals();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Goal deleted successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context).translate('goalDeletedSuccess'))),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -211,7 +212,7 @@ class _GoalsViewState extends State<GoalsView> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit Saving Goal'),
+        title: Text(AppLocalizations.of(context).translate('editGoal')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -219,7 +220,7 @@ class _GoalsViewState extends State<GoalsView> {
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  labelText: 'Goal Name',
+                  labelText: AppLocalizations.of(context).translate('goalName'),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -245,7 +246,7 @@ class _GoalsViewState extends State<GoalsView> {
                     selectedDate = date;
                   }
                 },
-                child: Text('Select Deadline'),
+                child: Text(AppLocalizations.of(context).translate('selectDeadline')),
               ),
             ],
           ),
@@ -261,7 +262,7 @@ class _GoalsViewState extends State<GoalsView> {
                   amountController.text.isEmpty ||
                   selectedDate == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Please fill all fields')),
+                  SnackBar(content: Text(AppLocalizations.of(context).translate('pleaseFilAllFields'))),
                 );
                 return;
               }
@@ -276,7 +277,7 @@ class _GoalsViewState extends State<GoalsView> {
                 Navigator.pop(context);
                 _refreshGoals();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Goal updated successfully')),
+                  SnackBar(content: Text(AppLocalizations.of(context).translate('goalUpdatedSuccess'))),
                 );
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -299,7 +300,7 @@ class _GoalsViewState extends State<GoalsView> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Add New Saving Goal'),
+        title: Text(AppLocalizations.of(context).translate('addNewGoal')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -307,7 +308,7 @@ class _GoalsViewState extends State<GoalsView> {
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  labelText: 'Goal Name',
+                  labelText: AppLocalizations.of(context).translate('goalName'),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -315,7 +316,7 @@ class _GoalsViewState extends State<GoalsView> {
               TextField(
                 controller: amountController,
                 decoration: InputDecoration(
-                  labelText: 'Target Amount',
+                  labelText: AppLocalizations.of(context).translate('targetAmount'),
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
@@ -333,7 +334,7 @@ class _GoalsViewState extends State<GoalsView> {
                     selectedDate = date;
                   }
                 },
-                child: Text('Select Deadline'),
+                child: Text(AppLocalizations.of(context).translate('selectDeadline')),
               ),
             ],
           ),

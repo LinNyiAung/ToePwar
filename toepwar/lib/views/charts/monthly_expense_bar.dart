@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 
 class MonthlyExpenseChart extends StatefulWidget {
@@ -112,7 +113,7 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
       ),
       child: DropdownButton<int>(
         value: _selectedYear,
-        hint: Text('Select Year'),
+        hint: Text(AppLocalizations.of(context).translate('selectYear')),
         underline: Container(),
         items: _availableYears.map((year) {
           return DropdownMenuItem<int>(
@@ -137,13 +138,13 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildStatCard(
-          'Yearly Total',
+          AppLocalizations.of(context).translate('yearlyTotal'),
           currencyFormat.format(_totalYearlyExpense),
           Icons.calendar_today,
           Colors.red,
         ),
         _buildStatCard(
-          'Monthly Average',
+          AppLocalizations.of(context).translate('monthlyAverage'),
           currencyFormat.format(_averageMonthlyExpense),
           Icons.show_chart,
           Colors.red,
@@ -209,11 +210,13 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Monthly Expenses',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).translate('monthlyExpenses'),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 _buildYearDropdown(),
@@ -231,7 +234,7 @@ class _MonthlyExpenseChartState extends State<MonthlyExpenseChart> {
                       Icon(Icons.show_chart, size: 48, color: Colors.grey),
                       SizedBox(height: 16),
                       Text(
-                        'No expense data available for selected year',
+                        AppLocalizations.of(context).translate('noMonthlyData'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade700,

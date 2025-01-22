@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../helpers/voice_transaction_handler.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/api_constants.dart';
 
@@ -59,7 +60,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Quick Update',
+              AppLocalizations.of(context).translate('quickUpdate'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -93,7 +94,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
               ),
               SizedBox(width: 12),
               Text(
-                _isListening ? 'Listening...' : 'Voice Input',
+                _isListening ? AppLocalizations.of(context).translate('listening') : AppLocalizations.of(context).translate('voiceInput'),
                 style: TextStyle(
                   color: _isListening ? Colors.red : Colors.purple,
                   fontWeight: FontWeight.w600,
@@ -118,7 +119,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Transaction Type',
+              AppLocalizations.of(context).translate('transactionType'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -130,7 +131,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
               children: [
                 Expanded(
                   child: _buildTypeButton(
-                    label: 'Income',
+                    label: AppLocalizations.of(context).translate('income'),
                     isSelected: _selectedType == 'income',
                     onTap: () => setState(() => _selectedType = 'income'),
                     color: Colors.green,
@@ -139,7 +140,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
                 SizedBox(width: 12),
                 Expanded(
                   child: _buildTypeButton(
-                    label: 'Expense',
+                    label: AppLocalizations.of(context).translate('expense'),
                     isSelected: _selectedType == 'expense',
                     onTap: () => setState(() => _selectedType = 'expense'),
                     color: Colors.red,
@@ -203,7 +204,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Transaction Details',
+              AppLocalizations.of(context).translate('transactionDetails'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -214,7 +215,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
             TextField(
               controller: _amountController,
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: AppLocalizations.of(context).translate('amount'),
                 prefixIcon: Icon(Icons.attach_money),
               ),
               keyboardType: TextInputType.number,
@@ -223,7 +224,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
             DropdownButtonFormField<String>(
               value: _selectedMainCategory,
               decoration: InputDecoration(
-                labelText: 'Category',
+                labelText: AppLocalizations.of(context).translate('category'),
                 prefixIcon: Icon(Icons.category),
               ),
               items: categoriesMap.keys.map((category) {
@@ -246,7 +247,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
               DropdownButtonFormField<String>(
                 value: _selectedSubCategory,
                 decoration: InputDecoration(
-                  labelText: 'Subcategory',
+                  labelText: AppLocalizations.of(context).translate('subcategory'),
                   prefixIcon: Icon(Icons.subject),
                 ),
                 items: categoriesMap[_selectedMainCategory]!.map((subcategory) {
@@ -288,7 +289,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
       margin: EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
         leading: Icon(Icons.help_outline),
-        title: Text('Voice Input Guide'),
+        title: Text(AppLocalizations.of(context).translate('voiceInputGuide')),
         children: [
           Padding(
             padding: EdgeInsets.all(16),
@@ -296,7 +297,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Sentence Structure:',
+                  AppLocalizations.of(context).translate('sentenceStructure'),
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
@@ -306,7 +307,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
                 ),
                 Divider(height: 24),
                 Text(
-                  'Example Phrases:',
+                  AppLocalizations.of(context).translate('examplePhrases'),
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
@@ -421,7 +422,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
-        title: Text('Edit Transaction',
+        title: Text(AppLocalizations.of(context).translate('editTransaction'),
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
         ),
         iconTheme: IconThemeData(color: Colors.white),
@@ -451,7 +452,7 @@ class _EditTransactionViewState extends State<EditTransactionView> {
                 child: _isLoading
                     ? CircularProgressIndicator(color: Colors.white)
                     : Text(
-                  'Update Transaction',
+                  AppLocalizations.of(context).translate('updateTransaction'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

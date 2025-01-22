@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/api_constants.dart';
 
@@ -90,98 +91,148 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
         : ApiConstants.nestedTransactionCategories['income']!;
 
     return AlertDialog(
-      title: Text('Filter Transactions'),
+      title: Text(AppLocalizations.of(context).translate('filterTransactions')),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Transaction Type Dropdown
-            DropdownButtonFormField<String>(
-              value: _selectedType,
-              decoration: InputDecoration(labelText: 'Type'),
-              items: [
-                DropdownMenuItem(value: null, child: Text('All')),
-                ...['income', 'expense'].map((type) =>
-                    DropdownMenuItem(value: type, child: Text(type.capitalize()))
+        child: Container(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Transaction Type Dropdown with improved constraints
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).translate('type'),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedType = value;
-                  // Reset categories when type changes
-                  _selectedMainCategory = null;
-                  _selectedSubCategory = null;
-                });
-              },
-            ),
-            SizedBox(height: 16),
-
-            // Main Category Dropdown
-            DropdownButtonFormField<String>(
-              value: _selectedMainCategory,
-              decoration: InputDecoration(labelText: 'Main Category'),
-              hint: Text('Select Main Category'),
-              items: [
-                DropdownMenuItem(value: null, child: Text('All')),
-                if (_selectedType != null)
-                  ...ApiConstants.nestedTransactionCategories[_selectedType]!.keys
-                      .map((mainCategory) =>
-                      DropdownMenuItem(
-                          value: mainCategory,
-                          child: Text(mainCategory)
+                items: [
+                  DropdownMenuItem(
+                      value: null,
+                      child: Text(AppLocalizations.of(context).translate('all'),
+                        overflow: TextOverflow.ellipsis,
                       )
                   ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedMainCategory = value;
-                  // Reset subcategory when main category changes
-                  _selectedSubCategory = null;
-                });
-              },
-            ),
-            SizedBox(height: 16),
-
-            // Subcategory Dropdown
-            if (_selectedType != null && _selectedMainCategory != null)
-              DropdownButtonFormField<String>(
-                value: _selectedSubCategory,
-                decoration: InputDecoration(labelText: 'Subcategory'),
-                hint: Text('Select Subcategory'),
-                items: [
-                  DropdownMenuItem(value: null, child: Text('All')),
-                  ...ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!
-                      .map((subCategory) =>
+                  ...['income', 'expense'].map((type) =>
                       DropdownMenuItem(
-                          value: subCategory,
-                          child: Text(subCategory)
+                          value: type,
+                          child: Text(type.capitalize(),
+                            overflow: TextOverflow.ellipsis,
+                          )
                       )
                   ),
                 ],
                 onChanged: (value) {
                   setState(() {
-                    _selectedSubCategory = value;
+                    _selectedType = value;
+                    _selectedMainCategory = null;
+                    _selectedSubCategory = null;
                   });
                 },
               ),
+              SizedBox(height: 16),
 
-            // Date Range Selection
-            ListTile(
-              title: Text('Date Range'),
-              subtitle: Text(_selectedDateRange != null
-                  ? '${DateFormat('MMM d').format(_selectedDateRange!.start)} - ${DateFormat('MMM d').format(_selectedDateRange!.end)}'
-                  : 'All dates'),
-              onTap: () async {
-                final range = await showDateRangePicker(
-                  context: context,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime.now(),
-                  initialDateRange: _selectedDateRange,
-                );
-                if (range != null) setState(() => _selectedDateRange = range);
-              },
-            ),
-          ],
+              // Main Category Dropdown with improved constraints
+              DropdownButtonFormField<String>(
+                value: _selectedMainCategory,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).translate('mainCategory'),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                hint: Text(
+                  AppLocalizations.of(context).translate('selectMainCategory'),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                items: [
+                  DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        AppLocalizations.of(context).translate('all'),
+                        overflow: TextOverflow.ellipsis,
+                      )
+                  ),
+                  if (_selectedType != null)
+                    ...ApiConstants.nestedTransactionCategories[_selectedType]!.keys
+                        .map((mainCategory) =>
+                        DropdownMenuItem(
+                            value: mainCategory,
+                            child: Text(
+                              mainCategory,
+                              overflow: TextOverflow.ellipsis,
+                            )
+                        )
+                    ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMainCategory = value;
+                    _selectedSubCategory = null;
+                  });
+                },
+              ),
+              SizedBox(height: 16),
+
+              // Subcategory Dropdown with improved constraints
+              if (_selectedType != null && _selectedMainCategory != null)
+                DropdownButtonFormField<String>(
+                  value: _selectedSubCategory,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).translate('subCategory'),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  hint: Text(
+                    AppLocalizations.of(context).translate('selectSubCategory'),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                        value: null,
+                        child: Text(
+                          AppLocalizations.of(context).translate('all'),
+                          overflow: TextOverflow.ellipsis,
+                        )
+                    ),
+                    ...ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!
+                        .map((subCategory) =>
+                        DropdownMenuItem(
+                            value: subCategory,
+                            child: Text(
+                              subCategory,
+                              overflow: TextOverflow.ellipsis,
+                            )
+                        )
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSubCategory = value;
+                    });
+                  },
+                ),
+
+              // Date Range Selection
+              ListTile(
+                title: Text(AppLocalizations.of(context).translate('dateRange')),
+                subtitle: Text(
+                  _selectedDateRange != null
+                      ? '${DateFormat('MMM d').format(_selectedDateRange!.start)} - ${DateFormat('MMM d').format(_selectedDateRange!.end)}'
+                      : AppLocalizations.of(context).translate('allDates'),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () async {
+                  final range = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(),
+                    initialDateRange: _selectedDateRange,
+                  );
+                  if (range != null) setState(() => _selectedDateRange = range);
+                },
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -195,12 +246,12 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
               _selectedDateRange = null;
             });
           },
-          child: Text('Reset'),
+          child: Text(AppLocalizations.of(context).translate('resetFilter')),
         ),
         // Cancel Button
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
+          child: Text(AppLocalizations.of(context).translate('cancel')),
         ),
         // Apply Filter Button
         TextButton(
@@ -213,7 +264,7 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
             );
             Navigator.pop(context, filter);
           },
-          child: Text('Apply'),
+          child: Text(AppLocalizations.of(context).translate('applyFilter')),
         ),
       ],
     );

@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 
 class BalanceTrendChart extends StatefulWidget {
@@ -165,9 +166,9 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
   Widget _buildIntervalSelector() {
     return SegmentedButton<String>(
       segments: [
-        ButtonSegment(value: 'Daily', label: Text('Daily')),
-        ButtonSegment(value: 'Monthly', label: Text('Monthly')),
-        ButtonSegment(value: 'Yearly', label: Text('Yearly')),
+        ButtonSegment(value: 'Daily', label: Text(AppLocalizations.of(context).translate('daily'))),
+        ButtonSegment(value: 'Monthly', label: Text(AppLocalizations.of(context).translate('monthly'))),
+        ButtonSegment(value: 'Yearly', label: Text(AppLocalizations.of(context).translate('yearly'))),
       ],
       selected: {_selectedInterval},
       onSelectionChanged: (Set<String> newSelection) {
@@ -188,9 +189,9 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatCard('Lowest', _minBalance!),
-          _buildStatCard('Highest', _maxBalance!),
-          _buildStatCard('Current', _balancePoints.last.balance),
+          _buildStatCard(AppLocalizations.of(context).translate('lowest'), _minBalance!),
+          _buildStatCard(AppLocalizations.of(context).translate('highest'), _maxBalance!),
+          _buildStatCard(AppLocalizations.of(context).translate('current'), _balancePoints.last.balance),
         ],
       ),
     );
@@ -238,14 +239,14 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
           child: Column(
             children: [
               Text(
-                'Balance Trend',
+                AppLocalizations.of(context).translate('balanceTrend'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               SizedBox(height: 10),
               _buildIntervalSelector(),
               SizedBox(height: 20),
               Icon(Icons.show_chart, size: 48, color: Colors.grey),
-              Text('No balance data available for selected period'),
+              Text(AppLocalizations.of(context).translate('noBalanceData')),
             ],
           ),
         ),
@@ -269,7 +270,7 @@ class _BalanceTrendChartState extends State<BalanceTrendChart> {
         child: Column(
           children: [
             Text(
-              'Balance Trend',
+              AppLocalizations.of(context).translate('balanceTrend'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             SizedBox(height: 10),

@@ -3,6 +3,7 @@ import 'package:toepwar/views/dashboard/widgets/drawer_widget.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../helpers/section_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/dashboard_model.dart';
 import '../../models/goal_model.dart';
 import '../../models/transaction_model.dart';
@@ -115,7 +116,7 @@ class _DashboardViewState extends State<DashboardView> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         title: Text(
-          'Dashboard',
+            AppLocalizations.of(context).translate('dashboard'),
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         iconTheme: IconThemeData(color: Colors.white),
@@ -133,7 +134,7 @@ class _DashboardViewState extends State<DashboardView> {
               if (!_isEditMode) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Section order saved'),
+                    content: Text(AppLocalizations.of(context).translate('sectionOrderSaved')),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -205,7 +206,7 @@ class _DashboardViewState extends State<DashboardView> {
                         children: [
                           Icon(Icons.info_outline, size: 16),
                           SizedBox(width: 8),
-                          Text('Drag sections to reorder'),
+                          Text(AppLocalizations.of(context).translate('dragSectionsToReorder'),),
                         ],
                       ),
                     ),
@@ -281,7 +282,7 @@ class _DashboardViewState extends State<DashboardView> {
             ElevatedButton.icon(
               onPressed: _refreshDashboard,
               icon: Icon(Icons.refresh),
-              label: Text('Retry'),
+              label: Text(AppLocalizations.of(context).translate('retry')),
             ),
           ],
         ),
@@ -342,7 +343,7 @@ class _DashboardViewState extends State<DashboardView> {
           Padding(
             padding: EdgeInsets.only(bottom: 16),
             child: Text(
-              'Financial Overview',
+              AppLocalizations.of(context).translate('financialOverview'),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 20,
@@ -355,21 +356,21 @@ class _DashboardViewState extends State<DashboardView> {
             child: Row(
               children: [
                 _buildSummaryCard(
-                  'Income',
+                  AppLocalizations.of(context).translate('income'),
                   dashboard.totalIncome,
                   Icons.arrow_upward,
                   Colors.green,
                 ),
                 SizedBox(width: 16),
                 _buildSummaryCard(
-                  'Expense',
+                  AppLocalizations.of(context).translate('expense'),
                   dashboard.totalExpense,
                   Icons.arrow_downward,
                   Colors.red,
                 ),
                 SizedBox(width: 16),
                 _buildSummaryCard(
-                  'Balance',
+                  AppLocalizations.of(context).translate('balance'),
                   dashboard.balance,
                   Icons.account_balance_wallet,
                   dashboard.balance >= 0 ? Colors.blue : Colors.orange,
@@ -439,7 +440,7 @@ class _DashboardViewState extends State<DashboardView> {
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Center(
-            child: Text('No active goals'),
+            child: Text(AppLocalizations.of(context).translate('noActiveGoals')),
           ),
         ),
       );
@@ -456,9 +457,12 @@ class _DashboardViewState extends State<DashboardView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Recent Goals',
-                  style: Theme.of(context).textTheme.titleLarge,
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).translate('recentGoals'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
@@ -469,7 +473,7 @@ class _DashboardViewState extends State<DashboardView> {
                       ),
                     );
                   },
-                  child: Text('See All'),
+                  child: Text(AppLocalizations.of(context).translate('seeAll')),
                 ),
               ],
             ),
@@ -511,7 +515,7 @@ class _DashboardViewState extends State<DashboardView> {
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Center(
-            child: Text('No recent transactions'),
+            child: Text(AppLocalizations.of(context).translate('noRecentTransactions')),
           ),
         ),
       );
@@ -528,9 +532,12 @@ class _DashboardViewState extends State<DashboardView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Recent Transactions',
-                  style: Theme.of(context).textTheme.titleLarge,
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).translate('recentTransactions'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
@@ -539,12 +546,12 @@ class _DashboardViewState extends State<DashboardView> {
                       MaterialPageRoute(
                         builder: (context) => TransactionHistoryView(
                           token: widget.token,
-                          onTransactionChanged: _refreshDashboard,  // Add this line
+                          onTransactionChanged: _refreshDashboard,
                         ),
                       ),
                     );
                   },
-                  child: Text('See All'),
+                  child: Text(AppLocalizations.of(context).translate('seeAll')),
                 ),
               ],
             ),

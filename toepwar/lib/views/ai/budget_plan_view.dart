@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 import '../dashboard/widgets/drawer_widget.dart';
 
@@ -56,7 +57,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
         title: Text(
-          'AI Budget Plan',
+          AppLocalizations.of(context).translate('aiBudgetPlan'),
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         actions: [
@@ -86,7 +87,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
           Icon(Icons.account_balance_wallet_outlined, size: 64, color: Colors.grey),
           SizedBox(height: 16),
           Text(
-            'No budget plan available',
+            AppLocalizations.of(context).translate('noBudgetPlan'),
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
           ),
           SizedBox(height: 8),
@@ -152,7 +153,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Budget Period:',
+              AppLocalizations.of(context).translate('budgetPeriod'),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -196,19 +197,21 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
         scrollDirection: Axis.horizontal,
         children: [
           _buildSummaryCard(
-            'Total Budget',
+            AppLocalizations.of(context).translate('totalBudget'),
             _budgetPlan!['total_budget'],
             Icons.account_balance_wallet,
             Colors.blue,
             currencyFormat,
           ),
+          SizedBox(width: 16,),
           _buildSummaryCard(
-            'Savings Target',
+            AppLocalizations.of(context).translate('savingsTarget'),
             _budgetPlan!['savings_target'],
             Icons.savings,
             Colors.green,
             currencyFormat,
           ),
+          SizedBox(width: 16,),
           _buildDateRangeCard(
             DateFormat('MMM d').format(DateTime.parse(_budgetPlan!['start_date'])),
             DateFormat('MMM d').format(DateTime.parse(_budgetPlan!['end_date'])),
@@ -227,7 +230,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
       ) {
     return Container(
       width: 200,
-      margin: EdgeInsets.only(right: 16),
+
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -318,7 +321,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
             ),
             SizedBox(height: 16),
             Text(
-              'Period',
+              AppLocalizations.of(context).translate('period'),
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -358,7 +361,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
                 Icon(Icons.pie_chart, color: Theme.of(context).primaryColor),
                 SizedBox(width: 8),
                 Text(
-                  'Category Budgets',
+                  AppLocalizations.of(context).translate('categoryBudgets'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -447,7 +450,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
                 Icon(Icons.lightbulb_outline, color: Colors.amber),
                 SizedBox(width: 8),
                 Text(
-                  'AI Recommendations',
+                  AppLocalizations.of(context).translate('aiRecommendations'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

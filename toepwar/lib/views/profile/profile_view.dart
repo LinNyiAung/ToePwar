@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
 
 import '../../controllers/auth_controller.dart';
+import '../../controllers/language_controller.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 import '../auth/login_view.dart';
 import '../dashboard/widgets/drawer_widget.dart';
@@ -56,16 +59,16 @@ class _ProfileViewState extends State<ProfileView> {
     final bool? confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Confirm Logout'),
-        content: Text('Are you sure you want to logout?'),
+        title: Text(AppLocalizations.of(context).translate('confirmLogout')),
+        content: Text(AppLocalizations.of(context).translate('logoutMessage')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel'),
+            child: Text(AppLocalizations.of(context).translate('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Logout', style: TextStyle(color: Colors.red)),
+            child: Text(AppLocalizations.of(context).translate('logout'), style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -80,6 +83,38 @@ class _ProfileViewState extends State<ProfileView> {
       );
     }
   }
+
+
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context).translate('selectLanguage')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('English'),
+                onTap: () {
+                  context.read<LanguageController>().changeLanguage('en');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('မြန်မာ'),
+                onTap: () {
+                  context.read<LanguageController>().changeLanguage('my');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   Widget _buildProfileHeader() {
     return Container(
@@ -200,7 +235,7 @@ class _ProfileViewState extends State<ProfileView> {
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
         title: Text(
-          'Profile',
+          AppLocalizations.of(context).translate('profile'),
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
 
@@ -229,42 +264,49 @@ class _ProfileViewState extends State<ProfileView> {
                   children: [
                     _buildMenuItem(
                       icon: Icons.person_outline,
-                      title: 'Edit Profile',
+                      title: AppLocalizations.of(context).translate('editProfile'),
                       onTap: () {
                         // Navigate to edit profile
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.notifications_outlined,
-                      title: 'Notifications',
+                      title: AppLocalizations.of(context).translate('notifications'),
                       onTap: () {
                         // Navigate to notifications
                       },
                     ),
                     _buildMenuItem(
+                      icon: Icons.language,
+                      title: AppLocalizations.of(context).translate('language'),
+                      onTap: () {
+                        _showLanguageDialog();
+                      },
+                    ),
+                    _buildMenuItem(
                       icon: Icons.security,
-                      title: 'Security',
+                      title: AppLocalizations.of(context).translate('security'),
                       onTap: () {
                         // Navigate to security settings
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.help_outline,
-                      title: 'Help & Support',
+                      title: AppLocalizations.of(context).translate('helpSupport'),
                       onTap: () {
                         // Navigate to help
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.info_outline,
-                      title: 'About',
+                      title: AppLocalizations.of(context).translate('about'),
                       onTap: () {
                         // Navigate to about
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.logout,
-                      title: 'Logout',
+                      title: AppLocalizations.of(context).translate('logout'),
                       iconColor: Colors.red,
                       onTap: _logout,
                       showDivider: false,

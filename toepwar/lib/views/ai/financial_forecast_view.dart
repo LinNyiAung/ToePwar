@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import '../../helpers/forecast_section_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 import '../dashboard/widgets/drawer_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -97,7 +98,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text('Financial Forecast',
+        title: Text(AppLocalizations.of(context).translate('financialForecast'),
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
@@ -112,7 +113,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
               if (!_isEditMode) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Section order saved'),
+                    content: Text(AppLocalizations.of(context).translate('sectionOrderSaved')),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -156,7 +157,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
                       children: [
                         Icon(Icons.info_outline, size: 16),
                         SizedBox(width: 8),
-                        Text('Drag sections to reorder'),
+                        Text(AppLocalizations.of(context).translate('dragSectionsToReorder')),
                       ],
                     ),
                   ),
@@ -249,7 +250,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Forecast Period',
+              AppLocalizations.of(context).translate('forecastPeriod'),
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -259,7 +260,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
             Row(
               children: [
                 Text(
-                  '$_forecastMonths months',
+                  '$_forecastMonths ' + AppLocalizations.of(context).translate('months'),
                   style: TextStyle(
                     color: Theme.of(context).primaryColor,
                     fontWeight: FontWeight.w500,
@@ -267,7 +268,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
                 ),
                 const Spacer(),
                 Text(
-                  '(1-24 months)',
+                  AppLocalizations.of(context).translate('monthRange'),
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 12,
@@ -314,7 +315,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Forecast Trends', style: Theme.of(context).textTheme.titleLarge),
+            Text(AppLocalizations.of(context).translate('forecastTrends'), style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: 16),
             Container(
               height: 300,
@@ -410,14 +411,14 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Category Forecasts', style: Theme.of(context).textTheme.titleLarge),
+            Text(AppLocalizations.of(context).translate('categoryForecasts'), style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: 16),
             ExpansionTile(
-              title: Text('Income Categories'),
+              title: Text(AppLocalizations.of(context).translate('incomeCategories')),
               children: _buildCategoryList(categoryForecasts['income'], Colors.green),
             ),
             ExpansionTile(
-              title: Text('Expense Categories'),
+              title: Text(AppLocalizations.of(context).translate('expenseCategories')),
               children: _buildCategoryList(categoryForecasts['expense'], Colors.red),
             ),
           ],
@@ -452,7 +453,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Goal Projections', style: Theme.of(context).textTheme.titleLarge),
+            Text(AppLocalizations.of(context).translate('goalProjections'), style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: 16),
             ...goalProjections.map((goal) => _buildGoalProjectionItem(goal)).toList(),
           ],
@@ -497,8 +498,8 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
             ],
           ),
           SizedBox(height: 8),
-          Text(
-            'Monthly Required: ${formatter.format(goal['monthly_required'])}',
+          Text(AppLocalizations.of(context).translate('monthlyRequired') +
+            '${formatter.format(goal['monthly_required'])}',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -527,7 +528,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
               children: [
                 Expanded(
                   child: Text(
-                    'Financial Insights',
+                    AppLocalizations.of(context).translate('financialInsights'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
@@ -562,7 +563,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
             ],
             if (recommendations.isNotEmpty) ...[
               Text(
-                'Action Items',
+                AppLocalizations.of(context).translate('actionItems'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -582,7 +583,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
             ],
             if (opportunityAreas.isNotEmpty) ...[
               Text(
-                'Growth Opportunities',
+                AppLocalizations.of(context).translate('growthOpportunities'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -796,19 +797,19 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
 
     final cards = [
       _buildSummaryCard(
-        'Projected Income',
+        AppLocalizations.of(context).translate('projectedIncome'),
         getLastAmount(_forecastData!['income_forecast']),
         Icons.trending_up,
         Colors.green,
       ),
       _buildSummaryCard(
-        'Projected Expenses',
+        AppLocalizations.of(context).translate('projectedExpenses'),
         getLastAmount(_forecastData!['expense_forecast']),
         Icons.trending_down,
         Colors.red,
       ),
       _buildSummaryCard(
-        'Projected Savings',
+        AppLocalizations.of(context).translate('projectedSavings'),
         getLastAmount(_forecastData!['savings_forecast']),
         Icons.savings,
         Colors.blue,

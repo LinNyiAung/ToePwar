@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 
 class MonthlyIncomeChart extends StatefulWidget {
@@ -112,7 +113,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
       ),
       child: DropdownButton<int>(
         value: _selectedYear,
-        hint: Text('Select Year'),
+        hint: Text(AppLocalizations.of(context).translate('selectYear')),
         underline: Container(),
         items: _availableYears.map((year) {
           return DropdownMenuItem<int>(
@@ -137,12 +138,12 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildStatCard(
-          'Yearly Total',
+          AppLocalizations.of(context).translate('yearlyTotal'),
           currencyFormat.format(_totalYearlyIncome),
           Icons.calendar_today,
         ),
         _buildStatCard(
-          'Monthly Average',
+          AppLocalizations.of(context).translate('monthlyAverage'),
           currencyFormat.format(_averageMonthlyIncome),
           Icons.show_chart,
         ),
@@ -207,11 +208,13 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Monthly Income',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).translate('monthlyIncome'),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 _buildYearDropdown(),
@@ -229,7 +232,7 @@ class _MonthlyIncomeChartState extends State<MonthlyIncomeChart> {
                       Icon(Icons.show_chart, size: 48, color: Colors.grey),
                       SizedBox(height: 16),
                       Text(
-                        'No income data available for selected year',
+                        AppLocalizations.of(context).translate('noIncomeDataYear'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade700,

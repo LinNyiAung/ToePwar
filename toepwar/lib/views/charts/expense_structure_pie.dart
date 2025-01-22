@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 
 class ExpensePieChart extends StatefulWidget {
@@ -107,7 +108,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
             _selectedDateRange != null
                 ? '${DateFormat('MMM d, y').format(_selectedDateRange!.start)} - '
                 '${DateFormat('MMM d, y').format(_selectedDateRange!.end)}'
-                : 'All Time',
+                :  AppLocalizations.of(context).translate('allTime'),
             style: TextStyle(fontSize: 14),
           ),
           Row(
@@ -115,7 +116,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
               IconButton(
                 icon: Icon(Icons.date_range),
                 onPressed: _showDateRangePicker,
-                tooltip: 'Select Date Range',
+                tooltip: AppLocalizations.of(context).translate('selectDateRange'),
               ),
               if (_selectedDateRange != null)
                 IconButton(
@@ -124,7 +125,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
                     setState(() => _selectedDateRange = null);
                     _fetchExpenseCategories();
                   },
-                  tooltip: 'Clear Date Filter',
+                  tooltip: AppLocalizations.of(context).translate('clearDateFilter'),
                 ),
             ],
           ),
@@ -192,7 +193,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
             children: [
               _buildDateRangeFilter(),
               SizedBox(height: 16),
-              Text('No expense data available for selected period'),
+              Text(AppLocalizations.of(context).translate('noDistributionData')),
             ],
           ),
         ),
@@ -206,7 +207,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
         children: [
           SizedBox(height: 20),
           Text(
-            'Expense Distribution',
+            AppLocalizations.of(context).translate('expenseDistribution'),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,

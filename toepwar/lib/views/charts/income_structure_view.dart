@@ -5,6 +5,7 @@ import 'package:toepwar/views/charts/monthly_income_bar.dart';
 
 
 import '../../helpers/income_section_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../dashboard/widgets/drawer_widget.dart';
 import '../transaction/add_transaction_view.dart';
 
@@ -71,7 +72,7 @@ class _IncomeStructureViewState extends State<IncomeStructureView> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
-        title: Text('Income Charts',
+        title: Text(AppLocalizations.of(context).translate('incomeCharts'),
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
@@ -86,8 +87,8 @@ class _IncomeStructureViewState extends State<IncomeStructureView> {
               });
               if (!_isEditMode) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Section order saved'),
+                   SnackBar(
+                    content: Text(AppLocalizations.of(context).translate('sectionOrderSaved')),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -124,12 +125,12 @@ class _IncomeStructureViewState extends State<IncomeStructureView> {
                       color: Theme.of(context).primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child:  Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.info_outline, size: 16),
                         SizedBox(width: 8),
-                        Text('Drag sections to reorder'),
+                        Text(AppLocalizations.of(context).translate('dragSectionsToReorder')),
                       ],
                     ),
                   ),

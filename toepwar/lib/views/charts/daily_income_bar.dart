@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 
 class DailyIncomeChart extends StatefulWidget {
@@ -122,7 +123,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
       ),
       child: DropdownButton<DateTime>(
         value: _selectedMonth,
-        hint: Text('Select Month'),
+        hint: Text(AppLocalizations.of(context).translate('selectMonth')),
         underline: Container(),
         items: _availableMonths.map((month) {
           return DropdownMenuItem<DateTime>(
@@ -147,12 +148,12 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildStatCard(
-          'Monthly Total',
+          AppLocalizations.of(context).translate('monthlyTotal'),
           currencyFormat.format(_totalMonthlyIncome),
           Icons.calendar_month,
         ),
         _buildStatCard(
-          'Daily Average',
+          AppLocalizations.of(context).translate('dailyAverage'),
           currencyFormat.format(_averageDailyIncome),
           Icons.show_chart,
         ),
@@ -217,12 +218,14 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Daily Income',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context).translate('dailyIncome'),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                  
+                    ),
                   ),
                 ),
                 _buildMonthDropdown(),
@@ -240,7 +243,7 @@ class _DailyIncomeChartState extends State<DailyIncomeChart> {
                       Icon(Icons.show_chart, size: 48, color: Colors.grey),
                       SizedBox(height: 16),
                       Text(
-                        'No income data available for selected month',
+                        AppLocalizations.of(context).translate('noIncomeDataMonth'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade700,

@@ -7,6 +7,7 @@ import 'package:toepwar/views/profile/profile_view.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../controllers/auth_controller.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../utils/api_constants.dart';
 import '../../ai/financial_forecast_view.dart';
 import '../../charts/expense_structure_view.dart';
@@ -163,7 +164,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 children: [
                   _buildDrawerItem(
                     icon: Icons.dashboard_rounded,
-                    title: 'Dashboard',
+                    title: AppLocalizations.of(context).translate('dashboard'),
                     onTap: () => Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -175,7 +176,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   Padding(
                     padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
                     child: Text(
-                      'Transactions',
+                      AppLocalizations.of(context).translate('transactions'),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -185,7 +186,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.history,
-                    title: 'Transaction History',
+                    title: AppLocalizations.of(context).translate('transactionHistory'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -202,7 +203,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   Padding(
                     padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
                     child: Text(
-                      'Analytics',
+                      AppLocalizations.of(context).translate('analytics'),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -212,7 +213,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.pie_chart,
-                    title: 'Expense Analysis',
+                    title: AppLocalizations.of(context).translate('expenseAnalysis'),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -222,7 +223,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.trending_up,
-                    title: 'Income Analysis',
+                    title: AppLocalizations.of(context).translate('incomeAnalysis'),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -234,7 +235,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   Padding(
                     padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
                     child: Text(
-                      'Report',
+                      AppLocalizations.of(context).translate('report'),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -244,7 +245,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.book,
-                    title: 'Financial Report',
+                    title: AppLocalizations.of(context).translate('financialReport'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -260,7 +261,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   Padding(
                     padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
                     child: Text(
-                      'Planning',
+                      AppLocalizations.of(context).translate('planning'),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -270,7 +271,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.savings,
-                    title: 'Financial Goals',
+                    title: AppLocalizations.of(context).translate('financialGoals'),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -280,7 +281,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.auto_graph,
-                    title: 'AI Forecasting',
+                    title: AppLocalizations.of(context).translate('aiForecast'),
                     iconColor: Colors.blue,
                     onTap: () => Navigator.push(
                       context,
@@ -291,7 +292,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.psychology,
-                    title: 'AI Budget Plan',
+                    title: AppLocalizations.of(context).translate('aiPlanning'),
                     iconColor: Colors.blue,
                     onTap: () => Navigator.push(
                       context,
@@ -303,7 +304,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   Divider(),
                   _buildDrawerItem(
                     icon: Icons.logout,
-                    title: 'Logout',
+                    title: AppLocalizations.of(context).translate('logout'),
                     iconColor: Colors.red,
                     onTap: _logout,
                   ),
