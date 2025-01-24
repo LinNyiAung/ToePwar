@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi.responses import JSONResponse
 from database import transactions_collection, goals_collection
 from utils import get_current_user
 from datetime import datetime, timedelta
@@ -9,7 +10,73 @@ import pandas as pd
 router = APIRouter()
 
 
-def generate_insights_and_recommendations(forecast_data: dict) -> dict:
+# Add translation dictionary
+TRANSLATIONS = {
+    'en': {
+        'forecast_insights': {
+            'negative_cash_flow': "Critical: Monthly expenses (${average_expenses:.0f}) exceed income (${average_income:.0f}). Immediate action required to balance your budget.",
+            'high_expenses': "Warning: Your expenses consume {expense_to_income_ratio:.1f}% of income, leaving little room for savings and emergencies.",
+            'declining_income': "Caution: Your income shows a declining trend of {income_trend:.1f}% over the forecast period.",
+            'low_savings': "Notice: Your savings rate of {savings_rate:.1f}% is below the recommended 20%. Consider optimizing expenses.",
+            'positive': "Positive: Your finances show healthy patterns with a {savings_rate:.1f}% savings rate and balanced expense ratio."
+        },
+        'alerts': {
+            'deficit': {
+                'message': "Monthly deficit of ${deficit:.2f}",
+                'action': "Review and cut non-essential expenses immediately"
+            },
+            'low_savings': {
+                'message': "Critically low savings rate",
+                'action': "Increase emergency fund contributions"
+            }
+        },
+        'recommendations': {
+            'budget_high_growth': "Your {category} expenses are growing rapidly (+{category_trend:.1f}%). Review and set a budget cap.",
+            'budget_high_proportion': "Your {category} expenses represent {category_proportion:.1f}% of total spending. Research alternatives or negotiate better rates.",
+            'goal_at_risk': "Increase monthly savings by ${gap_amount:.2f} to stay on track for {goal_name}."
+        },
+        'opportunity_areas': {
+            'investment': "${potential_investment:.2f} monthly available for additional investments",
+            'cost_optimization': "Large expense categories identified with growth trend",
+            'income_growth': "Explore additional income streams or career development"
+        }
+    },
+    'my': {
+        'forecast_insights': {
+            'negative_cash_flow': "အရေးကြီး: လစဉ်အသုံးစရိတ် (${average_expenses:.0f}) သည် ဝင်ငွေ (${average_income:.0f}) ထက်ပိုနေသည်။ အသုံးစရိတ်ကို ချက်ချင်းထိန်းချုပ်ရန်လိုအပ်သည်။",
+            'high_expenses': "သတိပေး: သင်၏အသုံးစရိတ်သည် ဝင်ငွေ၏ {expense_to_income_ratio:.1f}% ကိုသုံးစွဲနေပြီး စုမြစ်ထားရန်နှင့် အရေးပေါ်အတွက်ငွေအနည်းငယ်သာကျန်ရှိသည်။",
+            'declining_income': "သတိထား: သင်၏ဝင်ငွေသည် {income_trend:.1f}% လျာထားချက်ကာလအတွင်း ကျဆင်းနေသည်။",
+            'low_savings': "မှတ်သားရန်: သင်၏စုမြစ်နှုန်း {savings_rate:.1f}% သည် အကြံပြုထားသော 20% အောက်တွင်ရှိနေသည်။ အသုံးစရိတ်များကို အ適သျှတ်ဆင်ပြင်စဉ်းစားပါ။",
+            'positive': "အဆင်ပြေသည်: သင်၏ ငွေကြေးအခြေအနေသည် {savings_rate:.1f}% စုမြစ်နှုန်းနှင့် توازန်ကျသောအသုံးစရိတ်အချိုးဖြင့် ကျန်းမာသည်။"
+        },
+        'alerts': {
+            'deficit': {
+                'message': "လစဉ်မလံုလံုလောက်လောက်ငွေ ${deficit:.2f}",
+                'action': "မလိုအပ်သောအသုံးစရိတ်များကို ချက်ချင်းပြန်လည်သုံးသပ်ပါ"
+            },
+            'low_savings': {
+                'message': "စုမြစ်နှုန်း အလွန်နည်းပါးသည်",
+                'action': "အရေးပေါ်ငွေတည်ငြိမ်မှု စုမြစ်ထည့်သွင်းမှုကို တိုးမြှင့်ပါ"
+            }
+        },
+        'recommendations': {
+            'budget_high_growth': "{category} အသုံးစရိတ်သည် အရှိန်အဟုန်မြှင့်မြန်စွာ တိုးလာနေသည် (+{category_trend:.1f}%)။ ပြန်လည်သုံးသပ်ပြီး အသုံးစရိတ်သတ်မှတ်ချက်ကို သတ်မှတ်ပါ။",
+            'budget_high_proportion': "သင်၏ {category} အသုံးစရိတ်သည် စုစုပေါင်းအသုံးစရိတ်၏ {category_proportion:.1f}% ကိုဖြစ်သည်။ အခြားရွေးချယ်စရာများကို စူးစမ်းသုံးသပ်ပါ သို့မဟုတ် နှုန်းထားညှိနှိုင်းပါ။",
+            'goal_at_risk': "{goal_name} အတွက် ပန်းတိုင်ရောက်ရန် လစဉ်စုမြစ်ငွေကို ${gap_amount:.2f} တိုးမြှင့်ပါ။"
+        },
+        'opportunity_areas': {
+            'investment': "တစ်လလျှင် ${potential_investment:.2f} သည် အပြည့်အဝရင်းနှီးမြှုပ်နှံမှုအတွက်ရနိုင်သည်",
+            'cost_optimization': "တိုးတက်မြန်ဆန်သော အသုံးစရိတ်အကြီးစား အမျိုးအစားများကိုခွဲခြမ်းစိတ်ဖြာထားပြီး",
+            'income_growth': "နောက်ထပ်ဝင်ငွေရင်းမြစ်များနှင့် အသက်မွေးဝမ်းကြောင်း တိုးတက်မှုကို စူးစမ်းပါ"
+        }
+    }
+}
+
+
+def generate_insights_and_recommendations(forecast_data: dict, language: str = 'en') -> dict:
+    # Ensure language is supported, default to English
+    language = language if language in TRANSLATIONS else 'en'
+
     insights = {
         'forecast_insight': None,
         'recommendations': [],
@@ -71,57 +138,76 @@ def generate_insights_and_recommendations(forecast_data: dict) -> dict:
         else:
             insights['risk_level'] = 'Low'
 
+        translation = TRANSLATIONS[language]
+
         # Generate main insight based on the most critical factor
         if 'negative_cash_flow' in risk_factors:
-            insights['forecast_insight'] = f"Critical: Monthly expenses (${average_expenses:.0f}) exceed income (${average_income:.0f}). Immediate action required to balance your budget."
+            insights['forecast_insight'] = translation['forecast_insights']['negative_cash_flow'].format(
+                average_expenses=average_expenses, 
+                average_income=average_income
+            )
         elif 'high_expenses' in risk_factors:
-            insights['forecast_insight'] = f"Warning: Your expenses consume {expense_to_income_ratio:.1f}% of income, leaving little room for savings and emergencies."
+            insights['forecast_insight'] = translation['forecast_insights']['high_expenses'].format(
+                expense_to_income_ratio=expense_to_income_ratio
+            )
         elif 'declining_income' in risk_factors:
-            insights['forecast_insight'] = f"Caution: Your income shows a declining trend of {income_trend:.1f}% over the forecast period."
+            insights['forecast_insight'] = translation['forecast_insights']['declining_income'].format(
+                income_trend=income_trend
+            )
         elif 'low_savings' in risk_factors:
-            insights['forecast_insight'] = f"Notice: Your savings rate of {savings_rate:.1f}% is below the recommended 20%. Consider optimizing expenses."
+            insights['forecast_insight'] = translation['forecast_insights']['low_savings'].format(
+                savings_rate=savings_rate
+            )
         else:
-            insights['forecast_insight'] = f"Positive: Your finances show healthy patterns with a {savings_rate:.1f}% savings rate and balanced expense ratio."
+            insights['forecast_insight'] = translation['forecast_insights']['positive'].format(
+                savings_rate=savings_rate
+            )
 
         # Generate immediate alerts for critical situations
         if average_expenses > average_income:
+            deficit = average_expenses - average_income
             insights['alerts'].append({
                 'type': 'critical',
-                'message': f"Monthly deficit of ${average_expenses - average_income:.2f}",
-                'action': "Review and cut non-essential expenses immediately"
+                'message': translation['alerts']['deficit']['message'].format(deficit=deficit),
+                'action': translation['alerts']['deficit']['action']
             })
         
         if savings_rate < 5:
             insights['alerts'].append({
                 'type': 'warning',
-                'message': "Critically low savings rate",
-                'action': "Increase emergency fund contributions"
+                'message': translation['alerts']['low_savings']['message'],
+                'action': translation['alerts']['low_savings']['action']
             })
 
-        # Enhanced category analysis
+        # Translate recommendations
         if 'expense' in category_forecasts:
             expense_categories = category_forecasts['expense']
             total_expenses = sum(cat[-1]['amount'] for cat in expense_categories.values())
             
-            # Identify categories with concerning growth or high proportion
             for category, data in expense_categories.items():
                 category_trend = calculate_trend([f['amount'] for f in data])
                 category_proportion = (data[-1]['amount'] / total_expenses) * 100
                 
-                if category_trend > 15:  # Fast growing categories
+                if category_trend > 15:
                     insights['recommendations'].append({
-                        'category': 'Budget',
+                        'category': category,
                         'priority': 'High' if category_proportion > 20 else 'Medium',
-                        'action': f"Your {category} expenses are growing rapidly (+{category_trend:.1f}%). Review and set a budget cap.",
+                        'action': translation['recommendations']['budget_high_growth'].format(
+                            category=category, 
+                            category_trend=category_trend
+                        ),
                         'impact': f"Controls {category_proportion:.1f}% of total expenses"
                     })
                 
-                if category_proportion > 30:  # Large expense categories
+                if category_proportion > 30:
                     insights['recommendations'].append({
-                        'category': 'Expense Optimization',
+                        'category': category,
                         'priority': 'High',
-                        'action': f"Your {category} expenses represent {category_proportion:.1f}% of total spending. Research alternatives or negotiate better rates.",
-                        'impact': f"Potential for significant monthly savings"
+                        'action': translation['recommendations']['budget_high_proportion'].format(
+                            category=category, 
+                            category_proportion=category_proportion
+                        ),
+                        'impact': "Potential for significant monthly savings"
                     })
 
         # Enhanced goal achievement analysis
@@ -136,7 +222,10 @@ def generate_insights_and_recommendations(forecast_data: dict) -> dict:
                 insights['recommendations'].append({
                     'category': 'Goals',
                     'priority': 'High' if probability < 30 else 'Medium',
-                    'action': f"Increase monthly savings by ${gap_amount:.2f} to stay on track for {goal['name']}.",
+                    'action': translation['recommendations']['goal_at_risk'].format(
+                        gap_amount=gap_amount, 
+                        goal_name=goal['name']
+                    ),
                     'impact': f"Goal at risk without adjustment for {shortfall_months} months"
                 })
 
@@ -145,22 +234,23 @@ def generate_insights_and_recommendations(forecast_data: dict) -> dict:
             potential_investment = (savings_rate - 20) * average_income / 100
             insights['opportunity_areas'].append({
                 'category': 'Investment',
-                'description': f"${potential_investment:.2f} monthly available for additional investments",
+                'description': translation['opportunity_areas']['investment'].format(
+                    potential_investment=potential_investment
+                ),
                 'potential_impact': "Long-term wealth building through diversified investments"
             })
         
         if expense_trend > 0 and any(cat['amount'] > average_expenses * 0.3 for cat in find_top_categories(category_forecasts['expense'])):
             insights['opportunity_areas'].append({
                 'category': 'Cost Optimization',
-                'description': "Large expense categories identified with growth trend",
+                'description': translation['opportunity_areas']['cost_optimization'],
                 'potential_impact': f"Potential ${(average_expenses * 0.1):.2f} monthly savings through optimization"
             })
 
-        # Add income growth opportunities if income is stagnant or declining
         if income_trend <= 2:
             insights['opportunity_areas'].append({
                 'category': 'Income Growth',
-                'description': "Explore additional income streams or career development",
+                'description': translation['opportunity_areas']['income_growth'],
                 'potential_impact': "Increase financial stability and accelerate goal achievement"
             })
 
@@ -217,7 +307,8 @@ def find_top_categories(categories: dict, top_n: int = 3) -> list:
 @router.get("/financial-forecast")
 def get_financial_forecast(
     user_id: str = Depends(get_current_user),
-    forecast_months: int = Query(default=6, ge=1, le=24)
+    forecast_months: int = Query(default=6, ge=1, le=24),
+    language: str = Query(default='en', regex='^(en|my)$')
 ):
     try:
         # Get historical transactions
@@ -302,12 +393,15 @@ def get_financial_forecast(
         }
         
         # Generate insights and recommendations
-        insights = generate_insights_and_recommendations(forecast_data)
+        insights = generate_insights_and_recommendations(forecast_data, language)
         
         # Add insights to the response
         forecast_data.update(insights)
         
-        return forecast_data
+        return JSONResponse(
+        content=forecast_data, 
+        media_type="application/json; charset=utf-8"
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Forecast calculation failed: {str(e)}")

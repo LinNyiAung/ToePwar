@@ -1,4 +1,7 @@
 from calendar import monthrange
+
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from database import transactions_collection
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -9,6 +12,40 @@ from models.budget_plan_model import BudgetPlan
 from utils import get_current_user
 
 router = APIRouter()
+
+
+TRANSLATIONS = {
+    'en': {
+        'recommendations': {
+            'high_essential_expenses': "Your essential expenses are taking up {essentials_ratio:.1%} of your budget. Consider finding ways to reduce basic living costs or increase income through additional revenue streams.",
+            'low_savings_rate': "Your current savings rate is {savings_ratio:.1%}. Try to increase your savings to at least 15% of income by reducing non-essential expenses.",
+            'variability_in_spending': "Your {category} spending shows high variation. Consider setting up a separate {category} fund to manage irregular expenses better",
+            'high_grocery_spending': "Consider meal planning and bulk buying to reduce {period_text} grocery expenses by ${savings:.2f}. Local markets often offer better prices than supermarkets.",
+            'high_dining_out': "Your {period_text} dining out expenses are {overage_percentage:.0%} over budget. Try cooking at home more often and limiting restaurant visits to special occasions.",
+            'high_utility_costs': "Your utility bills are higher than budgeted. Consider energy-efficient appliances and mindful usage during peak hours to reduce costs.",
+            'low_emergency_fund': "Your emergency fund allocation is below recommended levels. Aim to save at least 5% of your income for unexpected expenses.",
+            'rainy_season_prep': "Rainy season is approaching. Consider setting aside extra funds for transportation and healthcare, and ensure emergency funds are adequate.",
+            'festival_season_prep': "Festival season is coming up. Plan ahead for additional charitable giving and gift expenses while maintaining your essential savings goals.",
+            'thingyan_prep': "With Thingyan approaching, consider allocating funds for festivities while maintaining a balance with your regular savings and essential expenses.",
+            'hot_season_tips': "During hot season, you might see increased utility costs. Consider using fans instead of air conditioning when possible and maintaining your cooling systems for better efficiency."
+        }
+    },
+    'my': {
+        'recommendations': {
+            'high_essential_expenses': "သင်၏အဓိကဘဝဖြစ်ရပ်ဆိုင်ရာအသုံးစရိတ်သည် သင်၏လစဉ်ဘတ်ဂျက်၏ {essentials_ratio:.1%} ကိုကျာ စီးပွားဖြစ်နေသည်။ အခြေခံနေထိုင်စရိတ်များကို လျှော့ချရန် နှင့် နောက်ထပ်ဝင်ငွေရင်းမြစ်များမှတဆင့် ဝင်ငွေတိုးမြှင့်ရန် စဉ်းစားပါ။",
+            'low_savings_rate': "သင်၏လက်ရှိစုမြစ်နှုန်းသည် {savings_ratio:.1%} ဖြစ်သည်။ မလိုအပ်သောအသုံးစရိတ်များကို လျှော့ချခြင်းဖြင့် ဝင်ငွေ၏ အနည်းဆုံး 15% အထိ စုမြစ်နှုန်းကို မြှင့်တင်ကြည့်ပါ။",
+            'variability_in_spending': "သင်၏ {category} အသုံးစရိတ်သည် မြင့်မားသောအပြောင်းအလဲများပြသနေသည်. ပုံမှန်မဟုတ်သော အသုံးစရိတ်များကို ပိုမိုကောင်းမွန်စွာ စီမံခန့်ခွဲရန် သီးခြား {category} ရန်ပုံငွေကို ထည့်သွင်းစဉ်းစားပါ။",
+            'high_grocery_spending': "{period_text} စားသောက်ကုန်စရိတ်ကို စာရင်းပြုစုခြင်းနှင့် အရွယ်အစားကြီးဝယ်ခြင်းဖြင့် ${savings:.2f} လျှော့ချနိုင်သည်။ အဝေးပေါ်ဈေးများသည် စူပါမားကတ်ထက် ကျပ်သက်သာသည်ကိုသတိပြုပါ။",
+            'high_dining_out': "သင်၏ {period_text} စားသင်္ဘာဖြင့်စားသောက်မှုသည် ဘတ်ဂျက်ထက် {overage_percentage:.0%} ပို အသုံးပြုနေသည်။ အိမ်မှာပင် ချက်ပြုတ်စားသောက်ကြပြီး စားသင်္ဘာသွားမှုကို အထူးအခမ်းအနားမျှသာ ကန့်သတ်ပါ။",
+            'high_utility_costs': "သင်၏ဝန်ဆောင်မှုဘစ်သည် ဘတ်ဂျက်ထက်ပိုမြင့်နေသည်။ စွမ်းအင်ထိရောက်မှုရှိသော စက်ပစ္စည်းများနှင့် အဓိကအချိန်မျဉ်းတွင် သတိရှိစွာ အသုံးပြုပြီး ကုန်ကျစရိတ်ကို လျှော့ချပါ။",
+            'low_emergency_fund': "သင်၏အရေးပေါ်ရန်ပုံငွေသည် အကြံပြုထားသော အဆင့်အတန်းထက်နည်းနေပါသည်။ မצstaging်မျိုးဖြစ်ပွားဖွယ်ရာမျးကို ကြိုတင်ပြင်ဆင်ရန် ဝင်ငွေ၏ အနည်းဆုံး 5% ကိုစုဆောင်းပါ။",
+            'rainy_season_prep': "မိုးရာသီနီးကပ်လာပြီဖြစ်သည်။ သယ်ယူပို့ဆောင်ရေးနှင့် ကျန်းမာရေးအတွက် အပြောင်အလဲကြိုတင်ငွေကို သတ်မှတ်ပြီး၊ အရေးပေါ်ငွေရန်ပုံငွေကို လုံလောက်စွာစုဆောင်းထားပါ။",
+            'festival_season_prep': "အဖြတ်သတ်ပွဲရာသီနီးကပ်လာပြီ။ ပါရမီနှင့် လက်ဆောင်စရိတ်များအတွက် ကြိုတင်စီမံခြင်းနှင့် သင်၏အဓိကစုမြစ်ပန်းတိုင်ကို ထိန်းသိမ်းပါ။",
+            'thingyan_prep': "သင်္ကြန်နီးကပ်လာပြီ၊ ပွဲတော်စရိတ်ကို သင်၏နေ့စဉ်စုမြစ်နှင့် အဓိကအသုံးစရိတ်ကို မပျက်စီးစေဘဲ ငွေသတ်မှတ်ပါ။",
+            'hot_season_tips': "ပူရာသီတွင် ဝန်ဆောင်မှုကုန်ကျစရိတ်တိုးနိုင်သည်။ ဧရိယာမြှုပ်စဉ်ဆောင်ထက် ဖန်ကိုအသုံးပြုပြီး သင်၏ပန်ကာစနစ်ကို ထိရောက်စွာ ထိန်းသိမ်းပါ။"
+        }
+    }
+}
 
 class AIBudgetService:
     def __init__(self, user_id: str):
@@ -303,12 +340,26 @@ class AIBudgetService:
                     budgets[category] = round(budgets[category] + extra_per_category, 2)
         
         return budgets
+    
 
+    @staticmethod
+    def _get_recommendation(translation_key: str, language: str = 'en', **kwargs):
+        """Retrieve a translated recommendation with provided variables"""
+        language = language if language in TRANSLATIONS else 'en'
+        try:
+            return TRANSLATIONS[language]['recommendations'][translation_key].format(**kwargs)
+        except (KeyError, ValueError):
+            # Fallback to English if translation fails
+            return TRANSLATIONS['en']['recommendations'][translation_key].format(**kwargs)
+        
+
+    # Modify the _generate_recommendations method to use the new translation function
     def _generate_recommendations(
         self, 
         spending_patterns: Dict, 
         category_budgets: Dict[str, float],
-        period_type: str
+        period_type: str,
+        language: str = 'en'  # Add language parameter
     ) -> List[str]:
         recommendations = []
         period_text = 'daily' if period_type == 'daily' else 'monthly' if period_type == 'monthly' else 'yearly'
@@ -342,15 +393,20 @@ class AIBudgetService:
         # Generate high-level financial health recommendations
         if essentials_ratio > 0.65:
             recommendations.append(
-                f"Your essential expenses are taking up {essentials_ratio:.1%} of your budget. "
-                f"Consider finding ways to reduce basic living costs or increase income through "
-                f"additional revenue streams."
+                 self._get_recommendation(
+                    'high_essential_expenses', 
+                    language=language, 
+                    essentials_ratio=essentials_ratio
+                )
             )
         
         if savings_ratio < 0.15:
             recommendations.append(
-                f"Your current savings rate is {savings_ratio:.1%}. Try to increase your "
-                f"savings to at least 15% of income by reducing non-essential expenses."
+                self._get_recommendation(
+                    'low_savings_rate', 
+                    language=language, 
+                    savings_ratio=savings_ratio
+                )
             )
         
         # Analyze spending patterns and trends
@@ -358,42 +414,56 @@ class AIBudgetService:
             avg_spending = pattern["total"] * divisor
             budget = category_budgets.get(category, 0)
             frequency = pattern["frequency"]
-            
+
             # Calculate variability in spending
             if len(pattern.get("amounts", [])) > 1:
                 coefficient_variation = statistics.stdev(pattern["amounts"]) / statistics.mean(pattern["amounts"])
                 
                 if coefficient_variation > 0.5 and category in essential_categories:
                     recommendations.append(
-                        f"Your {category} spending shows high variation. Consider setting up a "
-                        f"separate {category} fund to manage irregular expenses better."
+                        self._get_recommendation(
+                            'variability_in_spending', 
+                            language=language, 
+                            category=category
+                        )
                     )
+            
             
             # Category-specific intelligent recommendations
             if category == "Groceries" and avg_spending > budget * 1.2:
                 recommendations.append(
-                    f"Consider meal planning and bulk buying to reduce {period_text} grocery "
-                    f"expenses by ${(avg_spending - budget):.2f}. Local markets often offer "
-                    f"better prices than supermarkets."
+                    self._get_recommendation(
+                        'high_grocery_spending', 
+                        language=language, 
+                        period_text=period_text, 
+                        savings=avg_spending - budget
+                    )
                 )
             
             elif category == "Dining Out" and avg_spending > budget * 1.3:
                 recommendations.append(
-                    f"Your {period_text} dining out expenses are {(avg_spending/budget - 1):.0%} "
-                    f"over budget. Try cooking at home more often and limiting restaurant "
-                    f"visits to special occasions."
+                    self._get_recommendation(
+                        'high_dining_out', 
+                        language=language, 
+                        period_text=period_text, 
+                        overage_percentage=avg_spending/budget - 1
+                    )
                 )
             
             elif category == "Utilities" and avg_spending > budget * 1.15:
                 recommendations.append(
-                    f"Your utility bills are higher than budgeted. Consider energy-efficient "
-                    f"appliances and mindful usage during peak hours to reduce costs."
+                    self._get_recommendation(
+                        'high_utility_costs', 
+                        language=language
+                    )
                 )
             
             elif category == "Emergency Fund" and budget < total_income * 0.05:
                 recommendations.append(
-                    f"Your emergency fund allocation is below recommended levels. Aim to save "
-                    f"at least 5% of your income for unexpected expenses."
+                    self._get_recommendation(
+                        'low_emergency_fund', 
+                        language=language
+                    )
                 )
         
         # Seasonal and cultural context
@@ -402,30 +472,37 @@ class AIBudgetService:
         # Rainy season preparations (May-June)
         if current_month in [4, 5]:
             recommendations.append(
-                "Rainy season is approaching. Consider setting aside extra funds for "
-                "transportation and healthcare, and ensure emergency funds are adequate."
+                self._get_recommendation(
+                    'rainy_season_prep', 
+                    language=language
+                )
             )
         
         # Festival season preparations (October-November)
         elif current_month in [9, 10]:
             recommendations.append(
-                "Festival season is coming up. Plan ahead for additional charitable giving "
-                "and gift expenses while maintaining your essential savings goals."
+                self._get_recommendation(
+                    'festival_season_prep', 
+                    language=language
+                )
             )
         
         # Thingyan preparation (March)
         elif current_month == 3:
             recommendations.append(
-                "With Thingyan approaching, consider allocating funds for festivities while "
-                "maintaining a balance with your regular savings and essential expenses."
+                self._get_recommendation(
+                    'thingyan_prep', 
+                    language=language
+                )
             )
         
         # Hot season (March-May)
         elif current_month in [3, 4, 5]:
             recommendations.append(
-                "During hot season, you might see increased utility costs. Consider using "
-                "fans instead of air conditioning when possible and maintaining your cooling "
-                "systems for better efficiency."
+                self._get_recommendation(
+                    'hot_season_tips', 
+                    language=language
+                )
             )
         
         # Prioritize and limit recommendations
@@ -433,12 +510,26 @@ class AIBudgetService:
         
         return recommendations
 
-# FastAPI router endpoint
+
 @router.get("/budget-plan")
 async def get_budget_plan(
     user_id: str = Depends(get_current_user),
-    period_type: str = Query(default='monthly', regex='^(daily|monthly|yearly)$')
+    period_type: str = Query(default='monthly', regex='^(daily|monthly|yearly)$'),
+    language: str = Query(default='en', regex='^(en|my)$')
 ):
     service = AIBudgetService(user_id)
     budget_plan = service.generate_budget_plan(period_type)
-    return budget_plan
+    
+    # Add language-specific recommendations
+    budget_plan.recommendations = service._generate_recommendations(
+        spending_patterns=service._analyze_spending_patterns(
+            service._get_historical_transactions(period_type), 
+            period_type
+        ),
+        category_budgets=budget_plan.category_budgets,
+        period_type=period_type,
+        language=language
+    )
+    
+    # Convert the budget_plan to a dictionary that can be JSON serialized
+    return JSONResponse(content=jsonable_encoder(budget_plan), media_type="application/json; charset=utf-8")

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
 import '../dashboard/widgets/drawer_widget.dart';
@@ -30,8 +32,10 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
     setState(() => _isLoading = true);
 
     try {
+      // Get current language from LanguageController
+      final languageCode = context.read<LanguageController>().currentLocale.languageCode;
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/budget-plan?period_type=$_selectedPeriod'),
+        Uri.parse('${ApiConstants.baseUrl}/budget-plan?period_type=$_selectedPeriod&language=$languageCode'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 

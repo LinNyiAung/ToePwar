@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 import '../../helpers/forecast_section_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
@@ -37,8 +39,11 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     setState(() => _isLoading = true);
 
     try {
+      // Get current language from LanguageController
+      final languageCode = context.read<LanguageController>().currentLocale.languageCode;
+
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/financial-forecast?forecast_months=$_forecastMonths'),
+        Uri.parse('${ApiConstants.baseUrl}/financial-forecast?forecast_months=$_forecastMonths&language=$languageCode'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -499,7 +504,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
           ),
           SizedBox(height: 8),
           Text(AppLocalizations.of(context).translate('monthlyRequired') +
-            '${formatter.format(goal['monthly_required'])}',
+              '${formatter.format(goal['monthly_required'])}',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
