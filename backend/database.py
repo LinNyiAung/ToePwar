@@ -10,6 +10,7 @@ users_collection = db["users"]
 transactions_collection = db["transactions"]
 goals_collection = db["goals"]
 admins_collection = db["admins"]
+notifications_collection = db["notifications"]
 
 # Send a ping to confirm a successful connection
 try:

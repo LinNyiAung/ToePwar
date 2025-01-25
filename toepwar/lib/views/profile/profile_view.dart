@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:toepwar/views/notifications/notification_view.dart';
 import 'dart:convert';
 
 import '../../controllers/auth_controller.dart';
@@ -273,7 +274,10 @@ class _ProfileViewState extends State<ProfileView> {
                       icon: Icons.notifications_outlined,
                       title: AppLocalizations.of(context).translate('notifications'),
                       onTap: () {
-                        // Navigate to notifications
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => NotificationListView(token: widget.token)),
+                        );
                       },
                     ),
                     _buildMenuItem(

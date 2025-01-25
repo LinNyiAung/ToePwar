@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import transactions_collection, goals_collection
 from models.transaction_model import Transaction
 from bson import ObjectId
+from routes.notification_routes import create_expense_alert_notification, detect_unusual_expense
 from utils import get_current_user
 from datetime import datetime
 from utils import serialize_transaction
@@ -23,6 +24,11 @@ def add_transaction(transaction: Transaction, user_id: str = Depends(get_current
         update_goals_for_income(user_id, transaction.amount)
     elif transaction.type == "expense":
         update_goals_for_expense(user_id, transaction.amount)
+        transaction_data = transaction.dict()
+        transaction_data["user_id"] = user_id
+
+        if detect_unusual_expense(user_id, transaction_data):
+            create_expense_alert_notification(user_id, transaction_data)
 
     # Return the created transaction
     created_transaction = transactions_collection.find_one({"_id": result.inserted_id})
