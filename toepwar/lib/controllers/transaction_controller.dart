@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../helpers/notification_service.dart';
+import '../models/notification_model.dart';
 import '../models/transaction_model.dart';
 import '../utils/api_constants.dart';
 
@@ -36,8 +38,7 @@ class TransactionController {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/addtransactions'), // Updated endpoint
+        Uri.parse('${ApiConstants.baseUrl}/addtransactions'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -51,7 +52,16 @@ class TransactionController {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return Transaction.fromJson(json.decode(response.body));
+        final responseData = json.decode(response.body);
+
+        // Check if there's a notification in the response
+        if (responseData['notification'] != null) {
+          final notification = AppNotification.fromJson(responseData['notification']);
+          await NotificationService.instance.showExpenseAlert(notification);
+        }
+
+        // Return the transaction data
+        return Transaction.fromJson(responseData['transaction']);
       } else {
         throw Exception('Failed to add transaction: ${response.statusCode}');
       }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/notification_controller.dart';
+import '../../helpers/notification_service.dart';
 import '../../models/notification_model.dart';
 
 
@@ -22,7 +23,13 @@ class _NotificationListViewState extends State<NotificationListView> {
   void initState() {
     super.initState();
     _notificationController = NotificationController(token: widget.token);
+    _initializeNotifications();
     _fetchNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    await NotificationService.instance.initialize();
+    await NotificationService.instance.requestPermissions();
   }
 
   Future<void> _fetchNotifications() async {

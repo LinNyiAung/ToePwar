@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from database import transactions_collection, goals_collection
+from database import transactions_collection, goals_collection, notifications_collection
 from models.transaction_model import Transaction
 from bson import ObjectId
 from routes.notification_routes import create_expense_alert_notification, detect_unusual_expense
@@ -18,6 +18,10 @@ def add_transaction(transaction: Transaction, user_id: str = Depends(get_current
     transaction_data = transaction.dict()
     transaction_data["user_id"] = user_id
     result = transactions_collection.insert_one(transaction_data)
+    created_transaction = transactions_collection.find_one({"_id": result.inserted_id})
+    
+    # Initialize notification data as None
+    notification_data = None
 
     # Update goals based on the transaction type
     if transaction.type == "income":
@@ -30,9 +34,24 @@ def add_transaction(transaction: Transaction, user_id: str = Depends(get_current
         if detect_unusual_expense(user_id, transaction_data):
             create_expense_alert_notification(user_id, transaction_data)
 
-    # Return the created transaction
-    created_transaction = transactions_collection.find_one({"_id": result.inserted_id})
-    return serialize_transaction(created_transaction)
+    
+    if transaction.type == "expense":
+        if detect_unusual_expense(user_id, transaction_data):
+            notification_id = create_expense_alert_notification(user_id, transaction_data)
+            # Get the created notification
+            notification = notifications_collection.find_one({"_id": ObjectId(notification_id)})
+            if notification:
+                notification['id'] = str(notification['_id'])
+                del notification['_id']
+                notification_data = notification
+
+    # Return both transaction and notification data
+    response_data = {
+        "transaction": serialize_transaction(created_transaction),
+        "notification": notification_data
+    }
+    
+    return response_data
 
 
 def update_goals_for_income(user_id: str, amount: float):

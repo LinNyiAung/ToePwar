@@ -36,7 +36,7 @@ def detect_unusual_expense(user_id: str, transaction: dict):
 
 def create_expense_alert_notification(user_id: str, transaction: dict):
     """
-    Create a notification for an unusual expense
+    Create both in-app and system notifications for an unusual expense
     """
     notification = {
         "user_id": user_id,
@@ -44,7 +44,8 @@ def create_expense_alert_notification(user_id: str, transaction: dict):
         "message": f"Large {transaction['category']} expense of K{transaction['amount']:.2f} detected",
         "timestamp": datetime.utcnow(),
         "type": "expenseAlert",
-        "isRead": False
+        "isRead": False,
+        "requiresSystemNotification": True  # Add this flag
     }
     result = notifications_collection.insert_one(notification)
     return str(result.inserted_id)
