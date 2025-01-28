@@ -88,6 +88,38 @@ class NotificationService {
     );
   }
 
+
+  Future<void> showBalanceAlert(AppNotification notification) async {
+    if (!_isInitialized) await initialize();
+
+    const androidDetails = AndroidNotificationDetails(
+      'balance_alerts', // channel id
+      'Balance Alerts', // channel name
+      channelDescription: 'Notifications for low balance alerts',
+      importance: Importance.high,
+      priority: Priority.high,
+      enableVibration: true,
+    );
+
+    const iOSDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iOSDetails,
+    );
+
+    await _localNotifications.show(
+      notification.hashCode,
+      notification.title,
+      notification.message,
+      notificationDetails,
+    );
+  }
+
   Future<void> cancelAllNotifications() async {
     await _localNotifications.cancelAll();
   }

@@ -51,6 +51,31 @@ def create_expense_alert_notification(user_id: str, transaction: dict):
     return str(result.inserted_id)
 
 
+def check_low_balance(user_id: str, balance: float) -> bool:
+    """
+    Check if the user's balance is below the threshold
+    Currently set to K1000 as the minimum threshold
+    """
+    MINIMUM_BALANCE_THRESHOLD = 1000  # You can make this configurable per user
+    return balance < MINIMUM_BALANCE_THRESHOLD
+
+def create_balance_alert_notification(user_id: str, balance: float):
+    """
+    Create both in-app and system notifications for low balance
+    """
+    notification = {
+        "user_id": user_id,
+        "title": "Low Balance Alert",
+        "message": f"Your current balance is K{balance:.2f}. Consider adding funds to your account.",
+        "timestamp": datetime.utcnow(),
+        "type": "balanceAlert",
+        "isRead": False,
+        "requiresSystemNotification": True
+    }
+    result = notifications_collection.insert_one(notification)
+    return str(result.inserted_id)
+
+
 @router.get("/getnotifications")
 def get_notifications(user_id: str = Depends(get_current_user)):
     notifications = list(notifications_collection.find({"user_id": user_id}).sort("timestamp", -1))

@@ -45,8 +45,8 @@ class AppNotification {
 enum NotificationType {
   expenseAlert,
   goalProgress,
-  budgetWarning,
-  systemUpdate
+  systemUpdate,
+  balanceAlert  // Add new type
 }
 
 extension NotificationTypeExtension on NotificationType {
@@ -56,10 +56,10 @@ extension NotificationTypeExtension on NotificationType {
         return NotificationType.expenseAlert;
       case 'goalProgress':
         return NotificationType.goalProgress;
-      case 'budgetWarning':
-        return NotificationType.budgetWarning;
       case 'systemUpdate':
         return NotificationType.systemUpdate;
+      case 'balanceAlert':
+        return NotificationType.balanceAlert;
       default:
         return NotificationType.systemUpdate;
     }
