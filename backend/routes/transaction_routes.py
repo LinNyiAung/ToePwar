@@ -28,14 +28,8 @@ def add_transaction(transaction: Transaction, user_id: str = Depends(get_current
         update_goals_for_income(user_id, transaction.amount)
     elif transaction.type == "expense":
         update_goals_for_expense(user_id, transaction.amount)
-        transaction_data = transaction.dict()
-        transaction_data["user_id"] = user_id
-
-        if detect_unusual_expense(user_id, transaction_data):
-            create_expense_alert_notification(user_id, transaction_data)
-
-    
-    if transaction.type == "expense":
+        
+        # Check for unusual expense and create notification if needed
         if detect_unusual_expense(user_id, transaction_data):
             notification_id = create_expense_alert_notification(user_id, transaction_data)
             # Get the created notification

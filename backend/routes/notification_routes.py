@@ -20,17 +20,29 @@ def detect_unusual_expense(user_id: str, transaction: dict):
         "date": {"$gte": thirty_days_ago}
     }))
 
-    if len(recent_expenses) < 5:
-        # Not enough data to determine unusual spending
+    # If no previous expenses, can't determine unusual spending
+    if not recent_expenses:
         return False
 
     # Calculate mean and standard deviation of recent expenses
     expense_amounts = [expense['amount'] for expense in recent_expenses]
     mean_expense = statistics.mean(expense_amounts)
+    
+    # Handle case with fewer transactions by using a more conservative threshold
+    if len(expense_amounts) < 5:
+        # For fewer transactions, use a simpler comparison
+        # Mark as unusual if more than 3 times the average
+        return transaction['amount'] > (mean_expense * 3)
+    
+    # Calculate standard deviation for more data points
     std_dev = statistics.stdev(expense_amounts)
 
     # Define unusual expense as more than 2 standard deviations above mean
-    is_unusual = transaction['amount'] > (mean_expense + 2 * std_dev)
+    # Also check if the expense is significantly larger than the average
+    is_unusual = (
+        transaction['amount'] > (mean_expense + 2 * std_dev) or 
+        transaction['amount'] > (mean_expense * 2.5)
+    )
 
     return is_unusual
 
