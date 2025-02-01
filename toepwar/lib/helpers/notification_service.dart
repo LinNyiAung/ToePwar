@@ -120,6 +120,41 @@ class NotificationService {
     );
   }
 
+  Future<void> showGoalProgressNotification(AppNotification notification) async {
+    if (!_isInitialized) await initialize();
+
+    // Create Android-specific notification details
+    const androidDetails = AndroidNotificationDetails(
+      'goal_progress', // channel id
+      'Goal Progress', // channel name
+      channelDescription: 'Notifications for savings goal progress',
+      importance: Importance.high,
+      priority: Priority.high,
+      enableVibration: true,
+    );
+
+    // Create iOS-specific notification details
+    const iOSDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    // Combine platform-specific details
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iOSDetails,
+    );
+
+    // Show the notification
+    await _localNotifications.show(
+      notification.hashCode,
+      notification.title,
+      notification.message,
+      notificationDetails,
+    );
+  }
+
   Future<void> cancelAllNotifications() async {
     await _localNotifications.cancelAll();
   }

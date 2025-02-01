@@ -12,6 +12,44 @@ from bson.errors import InvalidId
 
 router = APIRouter()
 
+
+def check_goal_progress(goal: dict) -> dict | None:
+    """
+    Check if a goal has reached significant progress milestones
+    Returns notification data if a milestone is reached, None otherwise
+    """
+    progress = (goal["current_amount"] / goal["target_amount"]) * 100
+    
+    # Define milestone thresholds
+    milestones = [25, 50, 75, 90, 100]
+    
+    # Find the highest milestone reached
+    reached_milestone = None
+    for milestone in milestones:
+        if progress >= milestone:
+            reached_milestone = milestone
+    
+    if reached_milestone:
+        message = (f"You've reached {reached_milestone}% of your goal '{goal['name']}'! "
+                  f"Current amount: K{goal['current_amount']:.2f}")
+        
+        # Special message for completion
+        if reached_milestone == 100:
+            message = f"Congratulations! You've achieved your goal '{goal['name']}'!"
+        
+        return {
+            "user_id": goal["user_id"],
+            "title": "Goal Progress Update",
+            "message": message,
+            "timestamp": datetime.utcnow(),
+            "type": "goalProgress",
+            "isRead": False,
+            "requiresSystemNotification": True,  # Add this flag
+            "milestone": reached_milestone
+        }
+    
+    return None
+
 @router.post("/addtransactions")
 def add_transaction(transaction: Transaction, user_id: str = Depends(get_current_user)):
     print("Received transaction:", transaction.dict())
@@ -20,29 +58,29 @@ def add_transaction(transaction: Transaction, user_id: str = Depends(get_current
     result = transactions_collection.insert_one(transaction_data)
     created_transaction = transactions_collection.find_one({"_id": result.inserted_id})
     
-    # Initialize notification data as None
-    notification_data = None
+    # Initialize notifications list
+    notifications = []
 
     # Update goals based on the transaction type
     if transaction.type == "income":
-        update_goals_for_income(user_id, transaction.amount)
+        goal_notifications = update_goals_for_income(user_id, transaction.amount)
+        notifications.extend(goal_notifications)
     elif transaction.type == "expense":
         update_goals_for_expense(user_id, transaction.amount)
         
         # Check for unusual expense and create notification if needed
         if detect_unusual_expense(user_id, transaction_data):
             notification_id = create_expense_alert_notification(user_id, transaction_data)
-            # Get the created notification
             notification = notifications_collection.find_one({"_id": ObjectId(notification_id)})
             if notification:
                 notification['id'] = str(notification['_id'])
                 del notification['_id']
-                notification_data = notification
+                notifications.append(notification)
 
-    # Return both transaction and notification data
+    # Return both transaction and notifications data
     response_data = {
         "transaction": serialize_transaction(created_transaction),
-        "notification": notification_data
+        "notifications": notifications
     }
     
     return response_data
@@ -50,11 +88,12 @@ def add_transaction(transaction: Transaction, user_id: str = Depends(get_current
 
 def update_goals_for_income(user_id: str, amount: float):
     remaining_balance = amount
-    
     goals = goals_collection.find({
         "user_id": user_id,
         "completed": {"$ne": True}
     }).sort("deadline", 1)
+
+    notifications_to_send = []  # Create a list to store notifications
 
     for goal in goals:
         target_amount = goal["target_amount"]
@@ -72,6 +111,17 @@ def update_goals_for_income(user_id: str, amount: float):
                     }
                 }
             )
+            
+            updated_goal = goals_collection.find_one({"_id": goal["_id"]})
+            notification_data = check_goal_progress(updated_goal)
+            if notification_data:
+                notification_id = notifications_collection.insert_one(notification_data).inserted_id
+                notification = notifications_collection.find_one({"_id": notification_id})
+                if notification:
+                    notification["id"] = str(notification["_id"])
+                    del notification["_id"]
+                    notifications_to_send.append(notification)
+                
             remaining_balance -= needed_amount
         elif remaining_balance > 0:
             new_amount = current_amount + remaining_balance
@@ -79,7 +129,20 @@ def update_goals_for_income(user_id: str, amount: float):
                 {"_id": goal["_id"]},
                 {"$set": {"current_amount": new_amount}}
             )
+            
+            updated_goal = goals_collection.find_one({"_id": goal["_id"]})
+            notification_data = check_goal_progress(updated_goal)
+            if notification_data:
+                notification_id = notifications_collection.insert_one(notification_data).inserted_id
+                notification = notifications_collection.find_one({"_id": notification_id})
+                if notification:
+                    notification["id"] = str(notification["_id"])
+                    del notification["_id"]
+                    notifications_to_send.append(notification)
+            
             break
+
+    return notifications_to_send 
 
 
 def update_goals_for_expense(user_id: str, amount: float):

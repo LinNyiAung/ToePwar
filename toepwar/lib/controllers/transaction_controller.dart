@@ -54,10 +54,18 @@ class TransactionController {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = json.decode(response.body);
 
-        // Check if there's a notification in the response
-        if (responseData['notification'] != null) {
-          final notification = AppNotification.fromJson(responseData['notification']);
-          await NotificationService.instance.showExpenseAlert(notification);
+        // Handle multiple notifications if present
+        if (responseData['notifications'] != null) {
+          for (var notificationData in responseData['notifications']) {
+            final notification = AppNotification.fromJson(notificationData);
+
+            // Show appropriate notification based on type
+            if (notification.type == NotificationType.expenseAlert) {
+              await NotificationService.instance.showExpenseAlert(notification);
+            } else if (notification.type == NotificationType.goalProgress) {
+              await NotificationService.instance.showGoalProgressNotification(notification);
+            }
+          }
         }
 
         // Return the transaction data
