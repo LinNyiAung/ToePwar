@@ -72,6 +72,21 @@ class GoalController {
     }
   }
 
+  Future<void> checkGoalReminders() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/checkgoalreminders'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to check goal reminders');
+      }
+    } catch (e) {
+      throw Exception('Failed to check goal reminders: $e');
+    }
+  }
+
   Future<Goal> updateGoal({
     required String goalId,
     required String name,

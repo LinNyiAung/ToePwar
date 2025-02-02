@@ -46,7 +46,8 @@ enum NotificationType {
   expenseAlert,
   goalProgress,
   systemUpdate,
-  balanceAlert  // Add new type
+  balanceAlert,
+  goalReminder
 }
 
 extension NotificationTypeExtension on NotificationType {
@@ -60,6 +61,8 @@ extension NotificationTypeExtension on NotificationType {
         return NotificationType.systemUpdate;
       case 'balanceAlert':
         return NotificationType.balanceAlert;
+      case 'goalReminder':
+        return NotificationType.goalReminder;
       default:
         return NotificationType.systemUpdate;
     }

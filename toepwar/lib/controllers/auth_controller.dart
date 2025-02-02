@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../helpers/auth_storage.dart';
+import '../helpers/goal_reminder_service.dart';
 import '../models/user_model.dart';
 import '../models/auth_model.dart';
 import '../utils/api_constants.dart';
@@ -31,6 +32,7 @@ class AuthController {
 
   // Add logout method
   Future<void> logout() async {
+    GoalReminderService.instance.dispose();
     await AuthStorage.clearAuthData();
   }
 

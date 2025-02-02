@@ -155,6 +155,38 @@ class NotificationService {
     );
   }
 
+
+  Future<void> showGoalReminder(AppNotification notification) async {
+    if (!_isInitialized) await initialize();
+
+    const androidDetails = AndroidNotificationDetails(
+      'goal_reminders', // channel id
+      'Goal Reminders', // channel name
+      channelDescription: 'Regular reminders about your savings goals',
+      importance: Importance.high,
+      priority: Priority.high,
+      enableVibration: true,
+    );
+
+    const iOSDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iOSDetails,
+    );
+
+    await _localNotifications.show(
+      notification.hashCode,
+      notification.title,
+      notification.message,
+      notificationDetails,
+    );
+  }
+
   Future<void> cancelAllNotifications() async {
     await _localNotifications.cancelAll();
   }

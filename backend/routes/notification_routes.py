@@ -1,12 +1,91 @@
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
-from database import transactions_collection, notifications_collection
+import pytz
+from database import transactions_collection, notifications_collection, goals_collection
 from utils import get_current_user
 from datetime import datetime, timedelta
 from typing import List
 import statistics
 
 router = APIRouter()
+
+
+def check_goal_reminders(user_id: str):
+    """
+    Check if any goals need reminders based on progress and deadline
+    """
+    # Use UTC for all datetime operations
+    utc = pytz.UTC
+    current_date = datetime.now(utc)
+    
+    goals = goals_collection.find({
+        "user_id": user_id,
+        "completed": False
+    })
+    
+    notifications = []
+    for goal in goals:
+        try:
+            # Handle both datetime objects and ISO strings
+            if isinstance(goal['deadline'], str):
+                # Remove milliseconds if present and handle timezone
+                deadline_str = goal['deadline'].split('.')[0]
+                if deadline_str.endswith('Z'):
+                    deadline_str = deadline_str[:-1] + '+00:00'
+                deadline = datetime.fromisoformat(deadline_str)
+                if deadline.tzinfo is None:
+                    deadline = utc.localize(deadline)
+            else:
+                deadline = goal['deadline']
+                if deadline.tzinfo is None:
+                    deadline = utc.localize(deadline)
+            
+            days_remaining = (deadline - current_date).days
+            progress = (goal['current_amount'] / goal['target_amount']) * 100
+            
+            # Only proceed if days_remaining is positive
+            if days_remaining > 0:
+                # For calculating total days, handle ObjectId generation time
+                start_date = goal['_id'].generation_time.replace(tzinfo=utc)
+                total_days = (deadline - start_date).days
+                
+                if total_days > 0:  # Prevent division by zero
+                    time_percentage = ((total_days - days_remaining) / total_days) * 100
+                    
+                    should_remind = False
+                    message = ""
+                    
+                    if days_remaining <= 7 and progress < 90:
+                        should_remind = True
+                        message = f"Only {days_remaining} days left to reach your goal '{goal['name']}'. Current progress: {progress:.1f}%"
+                    elif days_remaining <= 30 and progress < 50:
+                        should_remind = True
+                        message = f"{days_remaining} days remaining for goal '{goal['name']}' but only {progress:.1f}% completed"
+                    elif progress < time_percentage - 10:
+                        should_remind = True
+                        message = f"Your goal '{goal['name']}' is behind schedule. Current progress: {progress:.1f}%"
+                    
+                    if should_remind:
+                        notification = {
+                            "user_id": user_id,
+                            "title": "Goal Reminder",
+                            "message": message,
+                            "timestamp": current_date,
+                            "type": "goalReminder",
+                            "isRead": False,
+                            "requiresSystemNotification": True
+                        }
+                        notifications.append(notification)
+                        
+        except (ValueError, KeyError, TypeError) as e:
+            print(f"Error processing goal {goal.get('_id', 'unknown')}: {str(e)}")
+            continue
+    
+    # Insert all notifications
+    if notifications:
+        notifications_collection.insert_many(notifications)
+    
+    return [str(notif['_id']) for notif in notifications]
 
 def detect_unusual_expense(user_id: str, transaction: dict):
     """

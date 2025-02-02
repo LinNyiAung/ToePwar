@@ -146,6 +146,8 @@ class _NotificationListViewState extends State<NotificationListView> {
         return 'System Updates';
       case NotificationType.balanceAlert:
         return 'Balance Alert';
+      case NotificationType.goalReminder:
+        return 'Goal Reminders';
     }
   }
 
@@ -241,7 +243,9 @@ class _NotificationListViewState extends State<NotificationListView> {
       case NotificationType.systemUpdate:
         return Colors.purple;
       case NotificationType.balanceAlert:
-        return Colors.blue;  // Add new case
+        return Colors.blue;
+      case NotificationType.goalReminder:
+        return Colors.orange;
     }
   }
 
@@ -254,7 +258,9 @@ class _NotificationListViewState extends State<NotificationListView> {
       case NotificationType.systemUpdate:
         return Icon(Icons.notifications, color: Colors.purple);
       case NotificationType.balanceAlert:
-        return Icon(Icons.account_balance_wallet, color: Colors.blue);  // Add new case
+        return Icon(Icons.account_balance_wallet, color: Colors.blue);
+      case NotificationType.goalReminder:
+        return Icon(Icons.timer, color: Colors.orange);// Add new case
     }
   }
 

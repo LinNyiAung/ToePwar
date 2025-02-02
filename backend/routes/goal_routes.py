@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database import goals_collection
 from models.goal_model import Goal
+from routes.notification_routes import check_goal_reminders
 from utils import get_current_user
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -99,3 +100,12 @@ def update_goal(
             status_code=400,
             detail="Invalid goal ID format"
         )
+    
+
+@router.get("/checkgoalreminders")
+def check_goal_reminders_endpoint(user_id: str = Depends(get_current_user)):
+    """
+    Endpoint to check and create goal reminders
+    """
+    notification_ids = check_goal_reminders(user_id)
+    return {"message": f"Created {len(notification_ids)} reminders"}
