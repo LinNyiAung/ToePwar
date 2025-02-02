@@ -82,6 +82,7 @@ class _NotificationListViewState extends State<NotificationListView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               title: Text('Filter Notifications'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,

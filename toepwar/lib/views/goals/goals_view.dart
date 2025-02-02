@@ -174,6 +174,7 @@ class _GoalsViewState extends State<GoalsView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(AppLocalizations.of(context).translate('deleteGoal')),
         content: Text('Are you sure you want to delete "${goal.name}"?'),
         actions: [
@@ -212,6 +213,7 @@ class _GoalsViewState extends State<GoalsView> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(AppLocalizations.of(context).translate('editGoal')),
         content: SingleChildScrollView(
           child: Column(
@@ -300,6 +302,7 @@ class _GoalsViewState extends State<GoalsView> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(AppLocalizations.of(context).translate('addNewGoal')),
         content: SingleChildScrollView(
           child: Column(

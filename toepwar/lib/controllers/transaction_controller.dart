@@ -130,6 +130,7 @@ class TransactionController {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           title: Text('Confirm Delete'),
           content:
           Text('Are you sure you want to delete this transaction?'),

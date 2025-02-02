@@ -91,6 +91,7 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
         : ApiConstants.nestedTransactionCategories['income']!;
 
     return AlertDialog(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       title: Text(AppLocalizations.of(context).translate('filterTransactions')),
       content: SingleChildScrollView(
         child: Container(

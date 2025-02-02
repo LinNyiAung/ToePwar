@@ -246,7 +246,7 @@ class AppLocalizations {
       'recentGoals': 'လက်တလော ငွေကြေးရည်မှန်းချက်‌များ',
       'seeAll': 'အားလုံး',
       'noRecentTransactions': 'မကြာသေးမီက ငွေဝင်/ထွက်များ မရှိပါ',
-      'noActiveGoals': 'လက်ရှိပန်းတိုင်များ မရှိပါ',
+      'noActiveGoals': 'ငွေကြေးရည်မှန်းချက် မရှိပါ',
       'editProfile': 'ပရိုဖိုင်ပြင်ဆင်ရန်',
       'notifications': 'အကြောင်းကြားချက်များ',
       'language': 'ဘာသာစကား',

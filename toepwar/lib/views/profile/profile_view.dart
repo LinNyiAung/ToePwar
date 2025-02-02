@@ -60,6 +60,7 @@ class _ProfileViewState extends State<ProfileView> {
     final bool? confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(AppLocalizations.of(context).translate('confirmLogout')),
         content: Text(AppLocalizations.of(context).translate('logoutMessage')),
         actions: [
@@ -90,27 +91,40 @@ class _ProfileViewState extends State<ProfileView> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context).translate('selectLanguage')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text('English'),
-                onTap: () {
-                  context.read<LanguageController>().changeLanguage('en');
-                  Navigator.pop(context);
-                },
+        return Consumer<LanguageController>(
+          builder: (context, languageController, child) {
+            final currentLang = languageController.currentLocale.languageCode;
+
+            return AlertDialog(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              title: Text(AppLocalizations.of(context).translate('selectLanguage')),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: Text('English'),
+                    trailing: currentLang == 'en'
+                        ? Icon(Icons.check, color: Theme.of(context).primaryColor)
+                        : null,
+                    onTap: () {
+                      context.read<LanguageController>().changeLanguage('en');
+                      Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    title: Text('မြန်မာ'),
+                    trailing: currentLang == 'my'
+                        ? Icon(Icons.check, color: Theme.of(context).primaryColor)
+                        : null,
+                    onTap: () {
+                      context.read<LanguageController>().changeLanguage('my');
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
               ),
-              ListTile(
-                title: Text('မြန်မာ'),
-                onTap: () {
-                  context.read<LanguageController>().changeLanguage('my');
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
