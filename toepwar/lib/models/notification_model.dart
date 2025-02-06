@@ -23,7 +23,7 @@ class AppNotification {
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
-      timestamp: DateTime.tryParse(json['timestamp']?.toString() ?? '') ?? DateTime.now(),
+      timestamp: DateTime.parse(json['timestamp']?.toString() ?? '').toLocal(), // Convert to local time
       type: NotificationTypeExtension.fromString(json['type']?.toString() ?? ''),
       isRead: json['isRead'] as bool? ?? false,
     );

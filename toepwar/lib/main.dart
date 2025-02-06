@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:toepwar/splash_screen.dart';
 import 'controllers/language_controller.dart';
+import 'helpers/notification_service.dart';
 import 'l10n/app_localizations.dart';
 
 
@@ -37,6 +38,8 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Toe Pwar',
+          // Add the navigator key from NotificationService
+          navigatorKey: NotificationService.instance.navigatorKey,
           locale: languageController.currentLocale,
           supportedLocales: const [
             Locale('en'),

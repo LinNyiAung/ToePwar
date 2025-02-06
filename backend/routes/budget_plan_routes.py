@@ -367,6 +367,9 @@ class AIBudgetService:
         
         # Track overall financial health indicators
         total_income = sum(cat_budget for cat_budget in category_budgets.values())
+        if total_income == 0:  # Add safety check for zero total income
+            return ["No budget data available for recommendations."]
+            
         essential_categories = {
             'Groceries', 'Rent/Mortgage', 'Utilities', 'Healthcare', 
             'Public Transit', 'Taxi', 'Education fees'
@@ -393,7 +396,7 @@ class AIBudgetService:
         # Generate high-level financial health recommendations
         if essentials_ratio > 0.65:
             recommendations.append(
-                 self._get_recommendation(
+                self._get_recommendation(
                     'high_essential_expenses', 
                     language=language, 
                     essentials_ratio=essentials_ratio
@@ -413,20 +416,29 @@ class AIBudgetService:
         for category, pattern in spending_patterns.items():
             avg_spending = pattern["total"] * divisor
             budget = category_budgets.get(category, 0)
+            
+            # Skip recommendations for categories with zero budget
+            if budget == 0:
+                continue
+                
             frequency = pattern["frequency"]
 
             # Calculate variability in spending
             if len(pattern.get("amounts", [])) > 1:
-                coefficient_variation = statistics.stdev(pattern["amounts"]) / statistics.mean(pattern["amounts"])
-                
-                if coefficient_variation > 0.5 and category in essential_categories:
-                    recommendations.append(
-                        self._get_recommendation(
-                            'variability_in_spending', 
-                            language=language, 
-                            category=category
+                try:
+                    coefficient_variation = statistics.stdev(pattern["amounts"]) / statistics.mean(pattern["amounts"])
+                    
+                    if coefficient_variation > 0.5 and category in essential_categories:
+                        recommendations.append(
+                            self._get_recommendation(
+                                'variability_in_spending', 
+                                language=language, 
+                                category=category
+                            )
                         )
-                    )
+                except statistics.StatisticsError:
+                    # Handle case where there's not enough data for statistical calculation
+                    continue
             
             
             # Category-specific intelligent recommendations
@@ -446,7 +458,7 @@ class AIBudgetService:
                         'high_dining_out', 
                         language=language, 
                         period_text=period_text, 
-                        overage_percentage=avg_spending/budget - 1
+                        overage_percentage=(avg_spending/budget - 1) if budget > 0 else 0
                     )
                 )
             
@@ -465,8 +477,8 @@ class AIBudgetService:
                         language=language
                     )
                 )
-        
-        # Seasonal and cultural context
+
+        # Seasonal and cultural context recommendations remain unchanged...
         current_month = datetime.utcnow().month
         
         # Rainy season preparations (May-June)
@@ -506,9 +518,9 @@ class AIBudgetService:
             )
         
         # Prioritize and limit recommendations
-        recommendations = sorted(recommendations, key=lambda x: len(x))[:5]  # Limit to top 5 most concise recommendations
+        recommendations = sorted(recommendations, key=lambda x: len(x))[:5]
         
-        return recommendations
+        return recommendations if recommendations else ["No specific recommendations available for this period."]
 
 
 @router.get("/budget-plan")

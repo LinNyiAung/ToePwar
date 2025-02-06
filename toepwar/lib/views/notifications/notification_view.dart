@@ -266,6 +266,7 @@ class _NotificationListViewState extends State<NotificationListView> {
   }
 
   String _formatTimestamp(DateTime timestamp) {
+    // timestamp is already in local time thanks to the model conversion
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 

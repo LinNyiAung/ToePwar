@@ -90,40 +90,100 @@ def check_goal_reminders(user_id: str):
 def detect_unusual_expense(user_id: str, transaction: dict):
     """
     Detect if an expense is unusually large compared to recent spending patterns
+    Returns True if the expense is unusual, False otherwise
     """
-    # Check expenses in the last 30 days
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    recent_expenses = list(transactions_collection.find({
-        "user_id": user_id,
-        "type": "expense",
-        "date": {"$gte": thirty_days_ago}
-    }))
+    print(f"Starting unusual expense detection for transaction: {transaction}")
+    
+    try:
+        # Only proceed if this is an expense transaction
+        if transaction.get('type') != 'expense':
+            print("Not an expense transaction, skipping unusual detection")
+            return False
 
-    # If no previous expenses, can't determine unusual spending
-    if not recent_expenses:
+        # Get amount from transaction, with validation
+        amount = transaction.get('amount')
+        if not isinstance(amount, (int, float)) or amount <= 0:
+            print(f"Invalid transaction amount: {amount}")
+            return False
+
+        # Check expenses in the last 30 days, EXCLUDING the current transaction
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        
+        # Add query condition to exclude current transaction if it has an _id
+        query = {
+            "user_id": user_id,
+            "type": "expense",
+            "date": {"$gte": thirty_days_ago}
+        }
+        
+        # If the transaction has an _id, exclude it from the comparison
+        if '_id' in transaction:
+            query['_id'] = {'$ne': transaction['_id']}
+            
+        recent_expenses = list(transactions_collection.find(query))
+
+        print(f"Found {len(recent_expenses)} recent expenses (excluding current)")
+
+        # If this is the first expense or no recent expenses
+        if not recent_expenses:
+            # For first transaction, flag as unusual if over threshold
+            is_unusual = amount > 1000  # Adjust threshold as needed
+            print(f"No previous expenses. Amount {amount} > 1000: {is_unusual}")
+            return is_unusual
+
+        # Calculate mean of recent expenses
+        expense_amounts = [expense['amount'] for expense in recent_expenses]
+        mean_expense = statistics.mean(expense_amounts)
+        print(f"Mean expense: {mean_expense}")
+
+        # For cases with few transactions (less than 5)
+        if len(expense_amounts) < 5:
+            # Find the largest previous expense
+            max_previous = max(expense_amounts)
+            print(f"Few transactions. Max previous expense: {max_previous}")
+            
+            # Consider unusual if:
+            # 1. Amount is more than 2x the largest previous expense, OR
+            # 2. Amount is more than 3x the mean expense
+            is_unusual = (
+                amount > (max_previous * 2) or 
+                amount > (mean_expense * 3)
+            )
+            print(f"Few transactions comparison - Amount: {amount}")
+            print(f"Threshold 1 (2x max previous): {max_previous * 2}")
+            print(f"Threshold 2 (3x mean): {mean_expense * 3}")
+            print(f"Is unusual: {is_unusual}")
+            return is_unusual
+
+        # Calculate standard deviation for more data points
+        try:
+            std_dev = statistics.stdev(expense_amounts)
+            print(f"Standard deviation: {std_dev}")
+        except statistics.StatisticsError as e:
+            print(f"Error calculating standard deviation: {e}")
+            # Fallback to simple comparison if std_dev calculation fails
+            is_unusual = amount > (mean_expense * 3)
+            print(f"Fallback comparison. Amount {amount} > {mean_expense * 3}: {is_unusual}")
+            return is_unusual
+
+        # Define unusual expense as more than 2 standard deviations above mean
+        # or more than 3x the average
+        is_unusual = (
+            amount > (mean_expense + 2 * std_dev) or 
+            amount > (mean_expense * 3)
+        )
+        
+        print(f"Final unusual check. Amount: {amount}")
+        print(f"Threshold 1 (mean + 2*std): {mean_expense + 2 * std_dev}")
+        print(f"Threshold 2 (mean * 3): {mean_expense * 3}")
+        print(f"Is unusual: {is_unusual}")
+        
+        return is_unusual
+
+    except Exception as e:
+        print(f"Error in detect_unusual_expense: {str(e)}")
+        # Return False in case of any errors to avoid false positives
         return False
-
-    # Calculate mean and standard deviation of recent expenses
-    expense_amounts = [expense['amount'] for expense in recent_expenses]
-    mean_expense = statistics.mean(expense_amounts)
-    
-    # Handle case with fewer transactions by using a more conservative threshold
-    if len(expense_amounts) < 5:
-        # For fewer transactions, use a simpler comparison
-        # Mark as unusual if more than 3 times the average
-        return transaction['amount'] > (mean_expense * 3)
-    
-    # Calculate standard deviation for more data points
-    std_dev = statistics.stdev(expense_amounts)
-
-    # Define unusual expense as more than 2 standard deviations above mean
-    # Also check if the expense is significantly larger than the average
-    is_unusual = (
-        transaction['amount'] > (mean_expense + 2 * std_dev) or 
-        transaction['amount'] > (mean_expense * 2.5)
-    )
-
-    return is_unusual
 
 def create_expense_alert_notification(user_id: str, transaction: dict):
     """
@@ -133,7 +193,7 @@ def create_expense_alert_notification(user_id: str, transaction: dict):
         "user_id": user_id,
         "title": "Unusual Expense Alert",
         "message": f"Large {transaction['category']} expense of K{transaction['amount']:.2f} detected",
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.utcnow().isoformat() + 'Z',  # Add 'Z' to indicate UTC
         "type": "expenseAlert",
         "isRead": False,
         "requiresSystemNotification": True  # Add this flag
@@ -158,7 +218,7 @@ def create_balance_alert_notification(user_id: str, balance: float):
         "user_id": user_id,
         "title": "Low Balance Alert",
         "message": f"Your current balance is K{balance:.2f}. Consider adding funds to your account.",
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.utcnow().isoformat() + 'Z',  # Add 'Z' to indicate UTC
         "type": "balanceAlert",
         "isRead": False,
         "requiresSystemNotification": True

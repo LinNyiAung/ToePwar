@@ -41,7 +41,7 @@ def check_goal_progress(goal: dict) -> dict | None:
             "user_id": goal["user_id"],
             "title": "Goal Progress Update",
             "message": message,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.utcnow().isoformat() + 'Z',  # Add 'Z' to indicate UTC
             "type": "goalProgress",
             "isRead": False,
             "requiresSystemNotification": True,  # Add this flag

@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/notification_model.dart';
+import '../views/notifications/notification_view.dart';
+import 'auth_storage.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._();
@@ -7,6 +10,9 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
+
+  // Add a global navigator key
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   NotificationService._();
 
@@ -36,10 +42,31 @@ class NotificationService {
 
     _isInitialized = true;
   }
-
   Future<void> _onNotificationTapped(NotificationResponse response) async {
-    // Handle notification tap
-    // You can navigate to the notifications screen here
+    // Get the current context using navigator key
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      // Get the token using AuthStorage
+      final token = await _getCurrentUserToken();
+
+      // Only navigate if we have a valid token
+      if (token != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => NotificationListView(token: token),
+          ),
+        );
+      } else {
+        // Handle the case where there's no valid token
+        // You might want to redirect to login instead
+        print('No valid auth token found');
+      }
+    }
+  }
+
+  Future<String?> _getCurrentUserToken() async {
+    // Use AuthStorage to get the current user's token
+    return await AuthStorage.getToken();
   }
 
   Future<void> requestPermissions() async {
