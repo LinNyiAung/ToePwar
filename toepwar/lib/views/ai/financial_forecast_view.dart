@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../controllers/language_controller.dart';
 import '../../helpers/forecast_section_config.dart';
 import '../../l10n/app_localizations.dart';
@@ -26,13 +28,373 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
   int _forecastMonths = 6;
   bool _isEditMode = false;
   late Future<List<ForecastSectionConfig>> _sectionsFuture;
+  final ScrollController _scrollController = ScrollController();
 
+  late TutorialCoachMark tutorialCoachMark;
+  final timeRangeKey = GlobalKey();
+  final summaryKey = GlobalKey();
+  final trendChartKey = GlobalKey();
+  final categoryKey = GlobalKey();
+  final insightsKey = GlobalKey();
+  final goalsKey = GlobalKey();
+  final editModeKey = GlobalKey();
+
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
     _sectionsFuture = ForecastSectionManager.loadSections();
     _fetchForecast();
+
+
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Wait for data to load before showing tutorial
+      if (!_isLoading && _forecastData != null) {
+        final prefs = await SharedPreferences.getInstance();
+        bool hasSeenTutorial = prefs.getBool('has_seen_forecast_tutorial') ?? false;
+
+        if (!hasSeenTutorial) {
+          // Add slight delay to ensure UI is fully rendered
+          Future.delayed(Duration(milliseconds: 500), () {
+            _showTutorial();
+            prefs.setBool('has_seen_forecast_tutorial', true);
+          });
+        }
+      }
+    });
+  }
+
+
+  void _initializeTutorial() {
+    tutorialCoachMark = TutorialCoachMark(
+      targets: _createTargets(),
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SKIP",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+      onFinish: () {
+        print("Forecast tutorial finished");
+      },
+      onSkip: () {
+        print("Forecast tutorial skipped");
+        return true;
+      },
+      focusAnimationDuration: Duration(milliseconds: 300),
+      pulseAnimationDuration: Duration(milliseconds: 500),
+      onClickTarget: (target) {
+        _scrollToTarget(target);
+      },
+      onClickOverlay: (target) {
+        _scrollToTarget(target);
+      },
+    );
+  }
+
+
+  void _scrollToTarget(TargetFocus target) {
+    if (target.keyTarget?.currentContext == null) return;
+
+    final RenderBox renderBox = target.keyTarget!.currentContext!.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final scrollOffset = position.dy;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetCenter = scrollOffset - (screenHeight / 2) + (renderBox.size.height / 2);
+
+    _scrollController.animateTo(
+      targetCenter.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+
+  List<TargetFocus> _createTargets() {
+    List<TargetFocus> targets = [];
+
+
+    targets.add(
+      TargetFocus(
+        identify: "edit_mode",
+        keyTarget: editModeKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 70),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Customize Your View",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Toggle edit mode to reorganize sections based on your preferences. Drag and drop sections to reorder them.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    targets.add(
+      TargetFocus(
+        identify: "time_range",
+        keyTarget: timeRangeKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Forecast Period",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Adjust the time range to see predictions for different periods, from 1 to 24 months ahead.",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    targets.add(
+      TargetFocus(
+        identify: "summary",
+        keyTarget: summaryKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Financial Summary",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Quick overview of your projected income, expenses, and savings for the selected period.",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    targets.add(
+      TargetFocus(
+        identify: "trend_chart",
+        keyTarget: trendChartKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Forecast Trends",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Visual representation of your financial trends over time. Track income, expenses, and savings projections.",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "categories",
+        keyTarget: categoryKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Category Forecasts",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Detailed breakdown of projected spending and income by category.",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "insights",
+        keyTarget: insightsKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Financial Insights",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "AI-powered analysis of your financial patterns with personalized recommendations.",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "goals",
+        keyTarget: goalsKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Goal Projections",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Track progress towards your financial goals with probability estimates and required actions.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    return targets;
+  }
+
+
+  void _showTutorial() {
+    _initializeTutorial();
+    tutorialCoachMark.show(context: context);
   }
 
   Future<void> _fetchForecast() async {
@@ -50,6 +412,19 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
       if (response.statusCode == 200) {
         setState(() {
           _forecastData = json.decode(response.body);
+
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final prefs = await SharedPreferences.getInstance();
+            bool hasSeenTutorial = prefs.getBool('has_seen_forecast_tutorial') ?? false;
+
+            if (!hasSeenTutorial) {
+              // Add slight delay to ensure UI is fully rendered
+              Future.delayed(Duration(milliseconds: 500), () {
+                _showTutorial();
+                prefs.setBool('has_seen_forecast_tutorial', true);
+              });
+            }
+          });
         });
       } else {
         throw Exception('Failed to load forecast');
@@ -107,6 +482,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
+            key: editModeKey,
             icon: Icon(
               _isEditMode ? Icons.check : Icons.edit,
               color: Colors.white,
@@ -147,6 +523,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
           final sections = snapshot.data!;
 
           return CustomScrollView(
+            controller: _scrollController,
             slivers: [
               if (_isEditMode)
                 SliverToBoxAdapter(
@@ -236,6 +613,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
 
   Widget _buildTimeRangeSelector() {
     return Container(
+      key: timeRangeKey,
       margin: const EdgeInsets.all(5),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -314,6 +692,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     final savingsForecast = _forecastData!['savings_forecast'];
 
     return Card(
+      key: trendChartKey,
       color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -410,6 +789,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     final categoryForecasts = _forecastData!['category_forecasts'];
 
     return Card(
+      key: categoryKey,
       color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -452,6 +832,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     if (goalProjections.isEmpty) return SizedBox.shrink();
 
     return Card(
+      key: goalsKey,
       color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -523,6 +904,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     final opportunityAreas = List<Map<String, dynamic>>.from(_forecastData!['opportunity_areas'] ?? []);
 
     return Card(
+      key: insightsKey,
       color: Theme.of(context).cardColor,
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -822,6 +1204,7 @@ class _FinancialForecastViewState extends State<FinancialForecastView> {
     ];
 
     return Container(
+      key: summaryKey,
       height: 160,
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: ListView.separated(

@@ -282,7 +282,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   _buildDrawerItem(
                     icon: Icons.auto_graph,
                     title: AppLocalizations.of(context).translate('aiForecast'),
-                    iconColor: Colors.blue,
+
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -293,7 +293,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   _buildDrawerItem(
                     icon: Icons.psychology,
                     title: AppLocalizations.of(context).translate('aiPlanning'),
-                    iconColor: Colors.blue,
+
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(

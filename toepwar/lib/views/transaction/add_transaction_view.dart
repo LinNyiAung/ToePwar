@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../helpers/receipt_scanner.dart';
 import '../../helpers/voice_transaction_handler.dart';
@@ -29,6 +31,24 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   bool _isListening = false;
   bool _showVoiceGuide = false;
 
+  final ScrollController _scrollController = ScrollController();
+
+
+  // Add these new variables
+  late TutorialCoachMark tutorialCoachMark;
+  final quickInputKey = GlobalKey();
+  final voiceInputKey = GlobalKey();
+  final transactionTypeKey = GlobalKey();
+  final amountFieldKey = GlobalKey();
+  final categoryFieldKey = GlobalKey();
+  final addButtonKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +58,314 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         ApiConstants.nestedTransactionCategories[_selectedType]!.keys.first;
     _selectedSubCategory =
         ApiConstants.nestedTransactionCategories[_selectedType]![_selectedMainCategory]!.first;
+
+    // Add this to show tutorial after widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      bool hasSeenTutorial = prefs.getBool('has_seen_add_transaction_tutorial') ?? false;
+
+      if (!hasSeenTutorial) {
+        _showTutorial();
+        await prefs.setBool('has_seen_add_transaction_tutorial', true);
+      }
+    });
+  }
+
+
+  void _initializeTutorial() {
+    tutorialCoachMark = TutorialCoachMark(
+      targets: _createTargets(),
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SKIP",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+      onFinish: () {
+        print("Tutorial finished");
+      },
+      onSkip: () {
+        print("Tutorial skipped");
+        return true;
+      },
+      // Add this function to handle scrolling
+      focusAnimationDuration: Duration(milliseconds: 300),
+      pulseAnimationDuration: Duration(milliseconds: 500),
+      onClickTarget: (target) {
+        _scrollToTarget(target);
+      },
+      onClickOverlay: (target) {
+        _scrollToTarget(target);
+      },
+    );
+  }
+
+
+  void _scrollToTarget(TargetFocus target) {
+    final RenderBox renderBox = target.keyTarget?.currentContext!.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final scrollOffset = position.dy;
+
+    // Calculate the scroll position to center the target
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetCenter = scrollOffset - (screenHeight / 2) + (renderBox.size.height / 2);
+
+    _scrollController.animateTo(
+      targetCenter.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  List<TargetFocus> _createTargets() {
+    List<TargetFocus> targets = [];
+
+    targets.add(
+      TargetFocus(
+        identify: "quick_input",
+        keyTarget: quickInputKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 70),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Quick Input Methods",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Quickly add transactions using camera or gallery to scan receipts",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "voice_input",
+        keyTarget: voiceInputKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Voice Input",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Add transactions using voice commands like '1000 salary' or '50 groceries'",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "transaction_type",
+        keyTarget: transactionTypeKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Transaction Type",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Choose between Income and Expense for your transaction",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "amount_field",
+        keyTarget: amountFieldKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Amount Input",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "type amount for transactions",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "category_field",
+        keyTarget: categoryFieldKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Category Input",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Choose category for transactions",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "add_button",
+        keyTarget: addButtonKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 200),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Add Transaction button",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Press this button to add transactions",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    // Add more targets for amount, category, and add button...
+    // Similar structure as above
+
+    return targets;
+  }
+
+
+  void _showTutorial() {
+    _initializeTutorial();
+    tutorialCoachMark.show(context: context);
   }
 
   Future<void> _scanReceipt(ImageSource source) async {
@@ -209,6 +537,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
 
   Widget _buildQuickInputCard() {
     return Card(
+      key: quickInputKey,
       color: Theme.of(context).cardColor,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -289,6 +618,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
 
   Widget _buildVoiceInputButton() {
     return Material(
+      key: voiceInputKey,
       color: _isListening ? Colors.red.withOpacity(0.1) : Colors.purple.withOpacity(0.1),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
@@ -322,6 +652,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
 
   Widget _buildTransactionTypeSelector() {
     return Card(
+      key: transactionTypeKey,
       color: Theme.of(context).cardColor,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -331,7 +662,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-            AppLocalizations.of(context).translate('transactionType'),
+              AppLocalizations.of(context).translate('transactionType'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -427,6 +758,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
             ),
             SizedBox(height: 16),
             TextField(
+              key: amountFieldKey,
               controller: _amountController,
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).translate('amount'),
@@ -436,6 +768,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
             ),
             SizedBox(height: 16),
             DropdownButtonFormField<String>(
+              key: categoryFieldKey,
               value: _selectedMainCategory,
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).translate('category'),
@@ -497,7 +830,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-
+        controller: _scrollController,
         child: Padding(
 
           padding: EdgeInsets.all(16),
@@ -514,6 +847,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
               _buildTransactionForm(),
               SizedBox(height: 24),
               ElevatedButton(
+                key: addButtonKey,
                 onPressed: _isLoading ? null : _addTransaction,
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16),

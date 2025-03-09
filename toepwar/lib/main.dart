@@ -12,7 +12,7 @@ import 'views/auth/login_view.dart';
 
 // Define global colors
 class AppColors {
-  static const Color primary = Color(0xFF3D89F6);
+  static const Color primary = Color(0xFF004987); //0xFF3D89F6
   static const Color background = Colors.white;
   static const Color inputBackground = Color(0xFFF5F5F5);
   static const Color textPrimary = Colors.black;

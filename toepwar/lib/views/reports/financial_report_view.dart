@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../helpers/report_section_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
@@ -29,11 +31,325 @@ class _FinancialReportViewState extends State<FinancialReportView> {
   bool _isEditMode = false;
   late Future<List<ReportSectionConfig>> _sectionsFuture;
 
+  late TutorialCoachMark tutorialCoachMark;
+  final GlobalKey dateRangeKey = GlobalKey();
+  final GlobalKey editLayoutKey = GlobalKey();
+  final GlobalKey exportKey = GlobalKey();
+  final GlobalKey summaryCardsKey = GlobalKey();
+  final GlobalKey incomeBreakdownKey = GlobalKey();
+  final GlobalKey expenseBreakdownKey = GlobalKey();
+  final GlobalKey goalsKey = GlobalKey();
+  final GlobalKey trendChartKey = GlobalKey();
+
+  final ScrollController _scrollController = ScrollController();
+
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     _sectionsFuture = ReportSectionManager.loadSections();
     _fetchReport();
+
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Wait for data to load before showing tutorial
+      if (!_isLoading && _reportData != null) {
+        final prefs = await SharedPreferences.getInstance();
+        bool hasSeenTutorial = prefs.getBool('has_seen_financial_report_tutorial') ?? false;
+
+        if (!hasSeenTutorial) {
+          // Add slight delay to ensure UI is fully rendered
+          Future.delayed(Duration(milliseconds: 500), () {
+            _showTutorial();
+            prefs.setBool('hhas_seen_financial_report_tutorial', true);
+          });
+        }
+      }
+    });
+  }
+
+
+  void _initializeTutorial() {
+    tutorialCoachMark = TutorialCoachMark(
+      targets: _createTargets(),
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SKIP",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+      onFinish: () {
+        print("Financial report tutorial finished");
+      },
+      onSkip: () {
+        print("Financial report tutorial skipped");
+        return true;
+      },
+      focusAnimationDuration: Duration(milliseconds: 300),
+      pulseAnimationDuration: Duration(milliseconds: 500),
+      onClickTarget: (target) {
+        _scrollToTarget(target);
+      },
+      onClickOverlay: (target) {
+        _scrollToTarget(target);
+      },
+    );
+  }
+
+
+  void _scrollToTarget(TargetFocus target) {
+    final RenderBox renderBox = target.keyTarget?.currentContext!.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final scrollOffset = position.dy;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetCenter = scrollOffset - (screenHeight / 2) + (renderBox.size.height / 2);
+
+    _scrollController.animateTo(
+      targetCenter.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+
+  List<TargetFocus> _createTargets() {
+    List<TargetFocus> targets = [];
+
+    targets.add(
+      TargetFocus(
+        identify: "date_range",
+        keyTarget: dateRangeKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Date Range",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Filter with date",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "edit_layout",
+        keyTarget: editLayoutKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Customize Your View",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Toggle edit mode to reorganize sections based on your preferences. Drag and drop sections to reorder them.",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "export_options",
+        keyTarget: exportKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Export Financial Report",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Export your financial report in excel or pdf format",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "summary_cards",
+        keyTarget: summaryCardsKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Financial Summary",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "This include income, expense and date range",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    targets.add(
+      TargetFocus(
+        identify: "income_breakdown",
+        keyTarget: incomeBreakdownKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Income Breakdown",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Income categories",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    targets.add(
+      TargetFocus(
+        identify: "expense_breakdown",
+        keyTarget: expenseBreakdownKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Expense Breakdown",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Expense Categories",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    // Add more targets for category breakdown, goals, and trend chart...
+    // Similar structure as above
+
+    return targets;
+  }
+
+
+  void _showTutorial() {
+    _initializeTutorial();
+    tutorialCoachMark.show(context: context);
   }
 
   Future<void> _fetchReport() async {
@@ -52,6 +368,19 @@ class _FinancialReportViewState extends State<FinancialReportView> {
 
       if (response.statusCode == 200) {
         setState(() => _reportData = json.decode(response.body));
+
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          final prefs = await SharedPreferences.getInstance();
+          bool hasSeenTutorial = prefs.getBool('has_seen_financial_report_tutorial') ?? false;
+
+          if (!hasSeenTutorial) {
+            // Add slight delay to ensure UI is fully rendered
+            Future.delayed(Duration(milliseconds: 500), () {
+              _showTutorial();
+              prefs.setBool('has_seen_financial_report_tutorial', true);
+            });
+          }
+        });
       } else {
         throw Exception('Failed to load report');
       }
@@ -79,6 +408,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           _reportData!['income_by_category'],
           Colors.green.shade100,
           Colors.green,
+          incomeBreakdownKey,
         );
       case ReportSection.expenseCategory:
         return _buildCategoryBreakdown(
@@ -86,6 +416,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           _reportData!['expense_by_category'],
           Colors.red.shade100,
           Colors.red,
+          expenseBreakdownKey,
         );
       case ReportSection.goalsProgress:
         return _buildGoalsProgress();
@@ -214,6 +545,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           final sections = snapshot.data!;
 
           return CustomScrollView(
+            controller: _scrollController,
             slivers: [
               if (_isEditMode)
                 SliverToBoxAdapter(
@@ -302,6 +634,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
         if (_startDate != null)
           Center(
             child: Container(
+
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
@@ -315,6 +648,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
             ),
           ),
         IconButton(
+          key: editLayoutKey,
           icon: Icon(
             _isEditMode ? Icons.check : Icons.edit,
             color: Colors.white,
@@ -334,6 +668,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           },
         ),
         IconButton(
+          key: dateRangeKey,
           icon: const Icon(Icons.calendar_today, color: Colors.white),
           onPressed: _showDateRangePicker,
         ),
@@ -344,6 +679,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
             onPressed: _resetFilter,
           ),
         PopupMenuButton<String>(
+          key: exportKey,
           icon: const Icon(Icons.download, color: Colors.white),
           onSelected: (String choice) {
             if (choice == 'excel') {
@@ -418,6 +754,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           _reportData!['income_by_category'],
           Colors.green.shade100,
           Colors.green,
+          incomeBreakdownKey,
         ),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(
@@ -425,6 +762,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
           _reportData!['expense_by_category'],
           Colors.red.shade100,
           Colors.red,
+          expenseBreakdownKey,
         ),
         const SizedBox(height: 24),
         _buildGoalsProgress(),
@@ -436,6 +774,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
 
   Widget _buildSummaryCards(Map<String, dynamic> summary, NumberFormat format) {
     return SizedBox(
+      key: summaryCardsKey,
       height: 160,
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -543,8 +882,10 @@ class _FinancialReportViewState extends State<FinancialReportView> {
       List<dynamic> categories,
       Color backgroundColor,
       Color textColor,
+      GlobalKey key,
       ) {
     return Card(
+      key: key,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -613,6 +954,7 @@ class _FinancialReportViewState extends State<FinancialReportView> {
     if (goals.isEmpty) return const SizedBox.shrink();
 
     return Card(
+      key: goalsKey,
       color: Theme.of(context).cardColor,
       elevation: 2,
       shape: RoundedRectangleBorder(

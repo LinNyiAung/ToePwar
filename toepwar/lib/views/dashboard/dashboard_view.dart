@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toepwar/views/dashboard/widgets/drawer_widget.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../helpers/section_config.dart';
@@ -32,6 +34,25 @@ class _DashboardViewState extends State<DashboardView> {
   late Future<List<SectionConfig>> _sectionsFuture;
   bool _isEditMode = false;
 
+  final ScrollController _scrollController = ScrollController();
+
+  late TutorialCoachMark tutorialCoachMark;
+  final overviewKey = GlobalKey();
+  final recentTransactionsKey = GlobalKey();
+  final recentGoalsKey = GlobalKey();
+  final balanceTrendKey = GlobalKey();
+  final expenseChartKey = GlobalKey();
+  final incomeChartKey = GlobalKey();
+  final addKey = GlobalKey();
+  final editModeKey = GlobalKey();
+
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +60,381 @@ class _DashboardViewState extends State<DashboardView> {
     _recentTransactions = _dashboardController.getRecentTransactions();
     _dashboardData = _dashboardController.getDashboardData();
     _sectionsFuture = DashboardSectionManager.loadSections();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      bool hasSeenTutorial = prefs.getBool('has_seen_dashboard_tutorial') ?? false;
+
+      if (!hasSeenTutorial) {
+        _showTutorial();
+        await prefs.setBool('has_seen_dashboard_tutorial', true);
+      }
+    });
+  }
+
+  void _initializeTutorial() {
+    tutorialCoachMark = TutorialCoachMark(
+      targets: _createTargets(),
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SKIP",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+      onFinish: () {
+        print("Dashboard tutorial finished");
+      },
+      onSkip: () {
+        print("Dashboard tutorial skipped");
+        return true;
+      },
+      focusAnimationDuration: Duration(milliseconds: 300),
+      pulseAnimationDuration: Duration(milliseconds: 500),
+      onClickTarget: (target) {
+        _scrollToTarget(target);
+      },
+      onClickOverlay: (target) {
+        _scrollToTarget(target);
+      },
+    );
+  }
+
+  void _scrollToTarget(TargetFocus target) {
+    if (target.keyTarget?.currentContext == null) return;
+
+    final RenderBox renderBox = target.keyTarget!.currentContext!.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final scrollOffset = position.dy;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetCenter = scrollOffset - (screenHeight / 2) + (renderBox.size.height / 2);
+
+    _scrollController.animateTo(
+      targetCenter.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+
+  List<TargetFocus> _createTargets() {
+    List<TargetFocus> targets = [];
+
+
+    targets.add(
+      TargetFocus(
+        identify: "edit_mode",
+        keyTarget: editModeKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Customize Your View",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Toggle edit mode to reorganize sections based on your preferences. Drag and drop sections to reorder them.",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "overview",
+        keyTarget: overviewKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Financial Overview",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Financial Overview include Income, Expense and Balance",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    targets.add(
+      TargetFocus(
+        identify: "recent_transactions",
+        keyTarget: recentTransactionsKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Recent Transactions",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Your recently made transactions",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    targets.add(
+      TargetFocus(
+        identify: "recent_goals",
+        keyTarget: recentGoalsKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Recent Goals",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Your created goals",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "balance_trend",
+        keyTarget: balanceTrendKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Balance Trend",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Detailed breakdown of projected spending and income by category.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "income_chart",
+        keyTarget: incomeChartKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Income Chart",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "AI-powered analysis of your financial patterns with personalized recommendations.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "expense_chart",
+        keyTarget: expenseChartKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Expense Chart",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Track progress towards your financial goals with probability estimates and required actions.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "add",
+        keyTarget: addKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 70),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Add transactions",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      "Toggle edit mode to reorganize sections based on your preferences. Drag and drop sections to reorder them.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    return targets;
+  }
+
+  void _showTutorial() {
+    _initializeTutorial();
+    tutorialCoachMark.show(context: context);
   }
 
   Widget _buildSection(DashboardSection section, Dashboard dashboard, List<Transaction> transactions) {
@@ -116,7 +512,7 @@ class _DashboardViewState extends State<DashboardView> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         title: Text(
-            AppLocalizations.of(context).translate('dashboard'),
+          AppLocalizations.of(context).translate('dashboard'),
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         iconTheme: IconThemeData(color: Colors.white),
@@ -124,6 +520,7 @@ class _DashboardViewState extends State<DashboardView> {
           // Edit mode toggle button
           IconButton(
             icon: Icon(
+              key: editModeKey,
               _isEditMode ? Icons.check : Icons.edit,
               color: Colors.white,
             ),
@@ -169,10 +566,12 @@ class _DashboardViewState extends State<DashboardView> {
             final sections = snapshot.data![2] as List<SectionConfig>;
 
             return CustomScrollView(
+              controller: _scrollController,
               slivers: [
                 // Fixed Financial Overview Section
                 SliverToBoxAdapter(
                   child: Container(
+                    key: overviewKey,
                     color: Theme.of(context).primaryColor,
                     child: Column(
                       children: [
@@ -254,7 +653,7 @@ class _DashboardViewState extends State<DashboardView> {
             _refreshDashboard();
           }
         },
-        child: Icon(Icons.add, color: Colors.white),
+        child: Icon(key: addKey,Icons.add, color: Colors.white),
         backgroundColor: Theme.of(context).primaryColor,
       ),
     );
@@ -436,6 +835,7 @@ class _DashboardViewState extends State<DashboardView> {
   Widget _buildRecentGoals(List<Goal> goals) {
     if (goals.isEmpty) {
       return Card(
+        key: recentGoalsKey,
         color: Theme.of(context).cardColor,
         child: Padding(
           padding: EdgeInsets.all(16),
@@ -447,6 +847,7 @@ class _DashboardViewState extends State<DashboardView> {
     }
 
     return Card(
+      key: recentGoalsKey,
       color: Theme.of(context).cardColor,
       elevation: 2,
       child: Column(
@@ -511,6 +912,7 @@ class _DashboardViewState extends State<DashboardView> {
   Widget _buildRecentTransactions(List<Transaction> transactions) {
     if (transactions.isEmpty) {
       return Card(
+        key: recentTransactionsKey,
         color: Theme.of(context).cardColor,
         child: Padding(
           padding: EdgeInsets.all(16),
@@ -522,6 +924,7 @@ class _DashboardViewState extends State<DashboardView> {
     }
 
     return Card(
+      key: recentTransactionsKey,
       color: Theme.of(context).cardColor,
       elevation: 2,
       child: Column(

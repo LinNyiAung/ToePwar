@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../controllers/language_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../utils/api_constants.dart';
@@ -22,10 +24,253 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
   bool _isLoading = false;
   String _selectedPeriod = 'monthly';
 
+  final ScrollController _scrollController = ScrollController();
+
+
+  // Add these new variables
+  late TutorialCoachMark tutorialCoachMark;
+  final periodKey = GlobalKey();
+  final summaryKey = GlobalKey();
+  final categoryBudgetsKey = GlobalKey();
+  final recommendationsKey = GlobalKey();
+
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     _fetchBudgetPlan();
+
+    // Add this to show tutorial after widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Wait for data to load before showing tutorial
+      if (!_isLoading && _budgetPlan != null) {
+        final prefs = await SharedPreferences.getInstance();
+        bool hasSeenTutorial = prefs.getBool('has_seen_budget_plan_tutorial') ?? false;
+
+        if (!hasSeenTutorial) {
+          // Add slight delay to ensure UI is fully rendered
+          Future.delayed(Duration(milliseconds: 500), () {
+            _showTutorial();
+            prefs.setBool('has_seen_budget_plan_tutorial', true);
+          });
+        }
+      }
+    });
+  }
+
+
+  void _initializeTutorial() {
+    tutorialCoachMark = TutorialCoachMark(
+      targets: _createTargets(),
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SKIP",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+      onFinish: () {
+        print("Tutorial finished");
+      },
+      onSkip: () {
+        print("Tutorial skipped");
+        return true;
+      },
+      // Add this function to handle scrolling
+      focusAnimationDuration: Duration(milliseconds: 300),
+      pulseAnimationDuration: Duration(milliseconds: 500),
+      onClickTarget: (target) {
+        _scrollToTarget(target);
+      },
+      onClickOverlay: (target) {
+        _scrollToTarget(target);
+      },
+    );
+  }
+
+
+  void _scrollToTarget(TargetFocus target) {
+    final RenderBox renderBox = target.keyTarget?.currentContext!.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final scrollOffset = position.dy;
+
+    // Calculate the scroll position to center the target
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetCenter = scrollOffset - (screenHeight / 2) + (renderBox.size.height / 2);
+
+    _scrollController.animateTo(
+      targetCenter.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+
+  List<TargetFocus> _createTargets() {
+    List<TargetFocus> targets = [];
+
+    targets.add(
+      TargetFocus(
+        identify: "period",
+        keyTarget: periodKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Plan Period",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Choose Period foe budget plan",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "summary",
+        keyTarget: summaryKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Plan Overview",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Overview include Total budget, Saving Target and Period",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "category_budgets",
+        keyTarget: categoryBudgetsKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Category Budgets",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Budgets for each categories",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+    targets.add(
+      TargetFocus(
+        identify: "recommendations",
+        keyTarget: recommendationsKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Recommendations",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    "Ai recommendations",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+
+
+    // Add more targets for amount, category, and add button...
+    // Similar structure as above
+
+    return targets;
+  }
+
+  void _showTutorial() {
+    print("Attempting to show tutorial");
+    _initializeTutorial();
+    print("Tutorial initialized");
+    tutorialCoachMark.show(context: context);
+    print("Tutorial show method called");
   }
 
   Future<void> _fetchBudgetPlan() async {
@@ -41,6 +286,20 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
 
       if (response.statusCode == 200) {
         setState(() => _budgetPlan = json.decode(response.body));
+
+        // Add this: Check if we should show tutorial after data loads
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          final prefs = await SharedPreferences.getInstance();
+          bool hasSeenTutorial = prefs.getBool('has_seen_budget_plan_tutorial') ?? false;
+
+          if (!hasSeenTutorial) {
+            // Add slight delay to ensure UI is fully rendered
+            Future.delayed(Duration(milliseconds: 500), () {
+              _showTutorial();
+              prefs.setBool('has_seen_budget_plan_tutorial', true);
+            });
+          }
+        });
       } else {
         throw Exception('Failed to load budget plan');
       }
@@ -107,6 +366,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
 
   Widget _buildContent() {
     return CustomScrollView(
+      controller: _scrollController,
       slivers: [
         SliverToBoxAdapter(
           child: Container(
@@ -147,6 +407,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
 
   Widget _buildPeriodSelector() {
     return Card(
+      key: periodKey,
       margin: EdgeInsets.all(16),
       elevation: 0,
       color: Colors.white,
@@ -195,6 +456,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
   Widget _buildSummaryCards() {
     final currencyFormat = NumberFormat.currency(symbol: 'K');
     return Container(
+      key: summaryKey,
       height: 150,
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: ListView(
@@ -352,6 +614,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
     final currencyFormat = NumberFormat.currency(symbol: 'K');
 
     return Card(
+      key: categoryBudgetsKey,
       color: Theme.of(context).cardColor,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -441,6 +704,7 @@ class _BudgetPlanViewState extends State<BudgetPlanView> {
     final recommendations = List<String>.from(_budgetPlan!['recommendations']);
 
     return Card(
+      key: recommendationsKey,
       color: Theme.of(context).cardColor,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
