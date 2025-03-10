@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'https://toepwar.onrender.com';
+  static const String baseUrl = 'http://192.168.20.231:800';
 
   // Add other API-related constants here
   static final Map<String, Map<String, List<String>>> nestedTransactionCategories = {
